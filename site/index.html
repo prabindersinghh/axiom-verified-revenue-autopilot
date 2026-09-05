@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AXIOM — Verified Revenue Autopilot</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%233395FF'/><text x='16' y='23' font-size='19' font-weight='800' font-family='system-ui,sans-serif' fill='white' text-anchor='middle'>A</text></svg>">
+<meta name="description" content="AXIOM is an open-source small language model built by fine-tuning Qwen2.5-1.5B with SFT/QLoRA and GRPO, now being adapted toward financial reasoning and verified autonomous revenue recovery.">
+<style>
+:root{
+  --blue:#3395FF; --blue-deep:#1B6FD6; --blue-soft:#EAF3FE; --blue-line:#C4DEFC;
+  --ink:#0A1628; --ink-2:#33445C; --muted:#6B7C93; --faint:#93A2B5;
+  --line:#E4E9F0; --line-2:#EFF3F8; --bg:#FFFFFF; --bg-2:#FAFBFD;
+  --green:#0E8A5F; --green-soft:#E7F6F0; --amber:#B4690E; --amber-soft:#FDF3E4;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding:0 32px}
+section{border-bottom:1px solid var(--line-2)}
+h1,h2,h3{margin:0;letter-spacing:-.02em;line-height:1.15}
+p{margin:0}
+a{color:var(--blue-deep);text-decoration:none}
+a:hover{text-decoration:underline}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);font-weight:600}
+.badge{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;font-weight:700;padding:5px 10px;border-radius:4px;
+  background:var(--blue-soft);color:var(--blue-deep);border:1px solid var(--blue-line)}
+.badge-gray{background:var(--bg-2);color:var(--muted);border-color:var(--line)}
+.sim-tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--amber);
+  background:var(--amber-soft);border:1px solid #F2DFBF;padding:4px 9px;border-radius:4px}
+
+/* ---------- nav ---------- */
+nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);
+  backdrop-filter:saturate(180%) blur(10px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:56px}
+.brand{font-weight:800;letter-spacing:.14em;font-size:14px}
+.navlinks{display:flex;gap:26px;font-size:13.5px;color:var(--ink-2)}
+.navlinks a{color:var(--ink-2)}
+@media(max-width:720px){.navlinks{display:none}}
+
+/* ---------- hero ---------- */
+.hero{padding:88px 0 72px}
+.hero h1{font-size:76px;font-weight:800;letter-spacing:-.045em;margin:20px 0 0}
+.hero h2{font-size:34px;font-weight:700;color:var(--ink);margin:14px 0 0;letter-spacing:-.03em}
+.hero p.sub{font-size:17.5px;color:var(--ink-2);max-width:660px;margin:20px 0 0;line-height:1.62}
+.strip{display:flex;flex-wrap:wrap;align-items:center;gap:0;margin:38px 0 0;
+  border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg-2)}
+.strip .node{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ink-2);
+  padding:11px 15px;white-space:nowrap}
+.strip .node.hl{color:var(--blue-deep);background:#fff}
+.strip .arw{color:var(--blue);font-size:13px;padding:0 1px}
+.cta-row{display:flex;align-items:center;gap:22px;margin:36px 0 0;flex-wrap:wrap}
+.btn{display:inline-block;background:var(--blue);color:#fff;font-weight:650;font-size:14.5px;
+  padding:13px 24px;border-radius:7px;border:none;cursor:pointer;font-family:var(--sans);
+  transition:background .15s}
+.btn:hover{background:var(--blue-deep);text-decoration:none;color:#fff}
+.btn-ghost{background:#fff;color:var(--ink);border:1px solid var(--line);font-weight:600}
+.btn-ghost:hover{background:var(--bg-2);color:var(--ink);border-color:var(--faint)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.link-sm{font-size:14px;color:var(--ink-2);border-bottom:1px solid var(--line);padding-bottom:1px}
+
+/* ---------- generic section ---------- */
+.sec{padding:76px 0}
+.sec h2{font-size:33px;font-weight:750;letter-spacing:-.03em}
+.sec .lede{font-size:16.5px;color:var(--ink-2);max-width:700px;margin:18px 0 0;line-height:1.65}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:56px;margin-top:34px}
+@media(max-width:860px){.two{grid-template-columns:1fr;gap:28px}}
+.note{font-size:13px;color:var(--muted);margin-top:14px}
+
+/* ---------- pipeline ---------- */
+.pipe{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:36px}
+@media(max-width:860px){.pipe{grid-template-columns:1fr}}
+.pstep{border:1px solid var(--line);border-radius:8px;padding:14px 16px;background:#fff;
+  display:flex;gap:14px;align-items:flex-start}
+.pstep .n{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--faint);
+  min-width:22px;padding-top:2px}
+.pstep .t{font-weight:680;font-size:14.5px}
+.pstep .d{font-size:13px;color:var(--muted);margin-top:2px;line-height:1.5}
+.pstep.built{border-left:3px solid var(--blue)}
+.pstep.prog{border-left:3px solid var(--amber);background:#FFFDF9}
+.pstep.plan{border-left:3px solid var(--line);background:var(--bg-2)}
+.tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;font-weight:700;
+  text-transform:uppercase;padding:2px 6px;border-radius:3px;margin-left:8px;vertical-align:2px}
+.tag.b{background:var(--blue-soft);color:var(--blue-deep)}
+.tag.p{background:var(--amber-soft);color:var(--amber)}
+.tag.r{background:var(--bg-2);color:var(--muted);border:1px solid var(--line)}
+
+/* ---------- demo ---------- */
+.demo{background:var(--bg-2)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:28px}
+@media(max-width:860px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px 18px}
+.kpi .l{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--muted);font-weight:650}
+.kpi .v{font-size:27px;font-weight:750;letter-spacing:-.025em;margin-top:6px}
+.kpi .v.blue{color:var(--blue-deep)}
+
+.console{display:grid;grid-template-columns:340px 1fr;gap:14px;margin-top:14px}
+@media(max-width:960px){.console{grid-template-columns:1fr}}
+.panel{background:#fff;border:1px solid var(--line);border-radius:8px}
+.panel-h{padding:12px 16px;border-bottom:1px solid var(--line-2);display:flex;
+  align-items:center;justify-content:space-between;gap:10px}
+.panel-h .ttl{font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;
+  text-transform:uppercase;font-weight:700;color:var(--ink-2)}
+.panel-b{padding:14px 16px}
+
+.txn{padding:12px 14px;border:1px solid var(--line);border-radius:7px;cursor:pointer;
+  margin-bottom:8px;background:#fff;transition:border-color .13s,background .13s}
+.txn:hover{border-color:var(--blue-line);background:#FCFDFF}
+.txn.on{border-color:var(--blue);background:var(--blue-soft);box-shadow:0 0 0 1px var(--blue)}
+.txn .r1{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.txn .amt{font-weight:750;font-size:16px;letter-spacing:-.02em}
+.txn .id{font-family:var(--mono);font-size:10.5px;color:var(--faint);font-weight:600}
+.txn .r2{font-size:12.5px;color:var(--ink-2);margin-top:3px}
+.txn .r3{font-size:11.5px;color:var(--muted);margin-top:2px}
+.pill{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;
+  text-transform:uppercase;font-weight:700;padding:2.5px 7px;border-radius:3px;margin-top:7px}
+.pill.pend{background:var(--bg-2);color:var(--muted);border:1px solid var(--line)}
+.pill.pass{background:var(--green-soft);color:var(--green)}
+.pill.esc{background:var(--amber-soft);color:var(--amber)}
+
+/* stages */
+.stages{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.stg{flex:1;min-width:96px;border:1px solid var(--line);border-radius:6px;padding:9px 10px;
+  background:#fff;transition:all .2s}
+.stg .sn{font-family:var(--mono);font-size:9.5px;color:var(--faint);font-weight:700}
+.stg .st{font-size:11.5px;font-weight:680;color:var(--muted);margin-top:2px;letter-spacing:.02em}
+.stg.act{border-color:var(--blue);background:var(--blue-soft)}
+.stg.act .st,.stg.act .sn{color:var(--blue-deep)}
+.stg.done{border-color:var(--blue-line);background:#fff}
+.stg.done .st{color:var(--ink)}
+.stg.done .sn::after{content:" ✓";color:var(--blue)}
+
+.ctx{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);
+  border-radius:7px;overflow:hidden;margin-bottom:14px}
+@media(max-width:620px){.ctx{grid-template-columns:1fr}}
+.ctx .c{padding:11px 14px;border-right:1px solid var(--line-2);border-bottom:1px solid var(--line-2)}
+.ctx .c .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);font-weight:650}
+.ctx .c .v{font-size:13.5px;font-weight:600;margin-top:3px;color:var(--ink)}
+
+.opt{border:1px solid var(--line);border-radius:6px;padding:10px 13px;margin-bottom:7px;
+  display:flex;gap:11px;align-items:flex-start;background:#fff;transition:all .2s}
+.opt .ol{font-family:var(--mono);font-weight:750;font-size:12px;color:var(--faint);min-width:16px}
+.opt .ot{font-size:13.5px;font-weight:620}
+.opt .od{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.45}
+.opt .ov{margin-left:auto;font-family:var(--mono);font-size:10px;font-weight:700;
+  letter-spacing:.07em;padding:3px 8px;border-radius:3px;white-space:nowrap}
+.opt.sel{border-color:var(--blue);background:var(--blue-soft)}
+.opt.sel .ol{color:var(--blue-deep)}
+.opt.rej{opacity:.55}
+.ov.sel{background:var(--blue);color:#fff}
+.ov.rej{background:var(--bg-2);color:var(--muted);border:1px solid var(--line)}
+
+.vrow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:9px 0;border-bottom:1px solid var(--line-2)}
+.vrow:last-child{border-bottom:none}
+.vrow .vk{font-size:13.5px;color:var(--ink-2)}
+.vst{font-family:var(--mono);font-size:10px;font-weight:750;letter-spacing:.09em;
+  padding:3px 9px;border-radius:3px}
+.vst.pass{background:var(--green-soft);color:var(--green)}
+.vst.rev{background:var(--amber-soft);color:var(--amber)}
+.vst.esc{background:var(--amber-soft);color:var(--amber)}
+.vst.wait{background:var(--bg-2);color:var(--faint);border:1px solid var(--line)}
+
+.verdict{border-radius:8px;padding:18px 20px;margin-top:14px;border:1px solid}
+.verdict.pass{background:var(--blue-soft);border-color:var(--blue)}
+.verdict.esc{background:var(--amber-soft);border-color:#EBCE9E}
+.verdict .vt{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;font-weight:750;
+  text-transform:uppercase}
+.verdict.pass .vt{color:var(--blue-deep)}
+.verdict.esc .vt{color:var(--amber)}
+.verdict .vm{font-size:19px;font-weight:730;margin-top:7px;letter-spacing:-.02em}
+.verdict .vr{font-size:13.5px;color:var(--ink-2);margin-top:9px;line-height:1.55}
+.approved{display:inline-flex;align-items:center;gap:9px;background:var(--blue);color:#fff;
+  font-family:var(--mono);font-size:11.5px;font-weight:750;letter-spacing:.11em;
+  padding:10px 18px;border-radius:6px;margin-top:14px;
+  animation:pop .35s cubic-bezier(.2,1.3,.4,1)}
+.approved.amber{background:var(--amber)}
+@keyframes pop{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+.queued{font-family:var(--mono);font-size:12px;color:var(--ink-2);margin-top:12px;
+  padding:11px 14px;background:var(--bg-2);border:1px dashed var(--line);border-radius:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:#fff;display:inline-block}
+.empty{text-align:center;padding:46px 20px;color:var(--muted);font-size:14px}
+.fade{animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.flow{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em;
+  text-align:center;margin-top:22px}
+.flow b{color:var(--blue-deep);font-weight:700}
+
+/* cards */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:32px}
+@media(max-width:860px){.cards{grid-template-columns:1fr}}
+.card{border:1px solid var(--line);border-radius:8px;padding:22px}
+.card h3{font-size:12px;font-family:var(--mono);letter-spacing:.13em;text-transform:uppercase;
+  color:var(--blue-deep);font-weight:750}
+.card p{font-size:14px;color:var(--ink-2);margin-top:9px;line-height:1.58}
+.grid6{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:26px}
+@media(max-width:720px){.grid6{grid-template-columns:1fr 1fr}}
+.g6{border:1px solid var(--line);border-radius:7px;padding:13px 15px;background:#fff;
+  font-size:13.5px;font-weight:620}
+.g6 span{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;
+  color:var(--faint);font-weight:700;margin-top:3px;text-transform:uppercase}
+
+/* final */
+.final{padding:96px 0;text-align:center}
+.final .big{font-size:44px;font-weight:780;letter-spacing:-.035em;line-height:1.22}
+.final .big em{font-style:normal;color:var(--blue)}
+.final .mark{margin-top:44px;font-weight:800;letter-spacing:.16em;font-size:19px}
+.final .msub{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:9px;
+  letter-spacing:.08em}
+footer{padding:26px 0 38px;text-align:center;font-family:var(--mono);font-size:11px;
+  color:var(--faint);letter-spacing:.06em;line-height:2}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <div class="brand">AXIOM</div>
+  <div class="navlinks">
+    <a href="#why">Why AXIOM</a>
+    <a href="#stack">Technical approach</a>
+    <a href="#demo">Simulation</a>
+    <a href="#pmos">PMOS</a>
+    <a href="https://github.com/prabindersinghh/axiom-verified-revenue-autopilot">GitHub</a>
+  </div>
+</div></nav>
+
+<!-- HERO -->
+<section><div class="wrap hero">
+  <span class="badge">Financial Reasoning SLM</span>
+  <h1>AXIOM</h1>
+  <h2>Verified Revenue Autopilot</h2>
+  <p class="sub">An open-source small language model evolving from Qwen2.5-1.5B fine-tuning into a
+  financial reasoning system for verified autonomous revenue recovery.</p>
+
+  <div class="strip">
+    <span class="node hl">Qwen2.5-1.5B</span><span class="arw">→</span>
+    <span class="node">SFT / QLoRA</span><span class="arw">→</span>
+    <span class="node">GRPO</span><span class="arw">→</span>
+    <span class="node hl">AXIOM SLM</span><span class="arw">→</span>
+    <span class="node">XD-PRM Verification</span><span class="arw">→</span>
+    <span class="node">Financial Reasoning</span><span class="arw">→</span>
+    <span class="node hl">Revenue Recovery</span>
+  </div>
+
+  <div class="cta-row">
+    <a href="#demo" class="btn">Run the simulation ↓</a>
+    <a href="#stack" class="link-sm">View technical approach</a>
+  </div>
+</div></section>
+
+<!-- WHY -->
+<section id="why"><div class="wrap sec">
+  <span class="eyebrow">Why AXIOM</span>
+  <h2 style="margin-top:12px">From an SLM to a Financial Decision Engine</h2>
+  <div class="two">
+    <div>
+      <p style="font-size:19px;font-weight:700;letter-spacing:-.02em">AXIOM is not an LLM wrapper.</p>
+      <p style="font-size:15.5px;color:var(--ink-2);margin-top:14px;line-height:1.65">
+      It is an open-source reasoning model trained from a <b>Qwen2.5-1.5B</b> foundation using
+      supervised fine-tuning (<b>SFT / QLoRA</b>) and reinforcement learning (<b>GRPO</b>), with
+      process-level verification and adaptive reasoning built into the stack.</p>
+    </div>
+    <div>
+      <p style="font-size:15.5px;color:var(--ink-2);line-height:1.65">
+      We are now adapting this reasoning stack toward <b>financial decisions</b> — where the model
+      must reason about context, evaluate alternatives, verify its decision, and only then
+      recommend or execute an action.</p>
+      <p class="note">The financial specialization is in progress. It is being trained and adapted;
+      it is not a completed capability.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- STACK -->
+<section id="stack"><div class="wrap sec">
+  <span class="eyebrow">Technical approach</span>
+  <h2 style="margin-top:12px">The stack, end to end</h2>
+  <p class="lede">Each stage below is implemented in the AXIOM repository unless marked otherwise.
+  We separate what is built from what is being adapted and what is planned.</p>
+  <div class="pipe">
+    <div class="pstep built"><div class="n">01</div><div><div class="t">Qwen2.5-1.5B-Instruct<span class="tag b">Built</span></div><div class="d">Open-weight foundation model. Apache 2.0.</div></div></div>
+    <div class="pstep built"><div class="n">02</div><div><div class="t">Open-source fine-tuning<span class="tag b">Built</span></div><div class="d">Reasoning traces distilled and compressed under a token budget with an answer-preservation check.</div></div></div>
+    <div class="pstep built"><div class="n">03</div><div><div class="t">SFT / QLoRA<span class="tag b">Built</span></div><div class="d">4-bit NF4 QLoRA, LoRA r=16 / α=32 on all linear layers, curriculum ordering.</div></div></div>
+    <div class="pstep built"><div class="n">04</div><div><div class="t">GRPO reinforcement learning<span class="tag b">Built</span></div><div class="d">Composite reward: correctness + verifier score − length − repetition. Verifier frozen, KL-leashed to the SFT reference.</div></div></div>
+    <div class="pstep built"><div class="n">05</div><div><div class="t">AXIOM small reasoning model<span class="tag b">Built</span></div><div class="d">A trained SLM that reasons in explicit, segmented steps.</div></div></div>
+    <div class="pstep built"><div class="n">06</div><div><div class="t">Adaptive reasoning depth<span class="tag b">Built</span></div><div class="d">Confidence-driven continue / expand / exit controller under hard depth and token caps.</div></div></div>
+    <div class="pstep built"><div class="n">07</div><div><div class="t">XD-PRM process verification<span class="tag b">Built</span></div><div class="d">Five scalar heads scored per reasoning step: logic, commonsense, consistency, efficiency, confidence.</div></div></div>
+    <div class="pstep prog"><div class="n">08</div><div><div class="t">Financial adaptation<span class="tag p">In progress</span></div><div class="d">Training and adapting the model and its verifier toward payment context, recovery strategy and financial risk.</div></div></div>
+    <div class="pstep plan"><div class="n">09</div><div><div class="t">Verified financial decision<span class="tag r">Planned</span></div><div class="d">Pass / revise / escalate gate on a financial action, with calibrated confidence.</div></div></div>
+    <div class="pstep plan"><div class="n">10</div><div><div class="t">Revenue recovery action<span class="tag r">Planned</span></div><div class="d">Execution against Razorpay. No integration exists today.</div></div></div>
+  </div>
+  <p class="note">Benchmark accuracy for the trained model has not been measured on adequate
+  hardware yet, and no financial training results exist. See the repository README for the full
+  measured-vs-unmeasured breakdown.</p>
+</div></section>
+
+<!-- DEMO -->
+<section id="demo" class="demo"><div class="wrap sec">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <span class="eyebrow">The core demo</span>
+    <span class="sim-tag">● Simulation data — synthetic</span>
+  </div>
+  <h2 style="margin-top:12px">Live Simulation — Verified Revenue Recovery</h2>
+  <p class="lede">See how AXIOM reasons about a failed payment before allowing a recovery action.
+  This is a prototype of the planned financial workflow, running on synthetic transactions. It does
+  not connect to Razorpay and executes no real payment actions.</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="l">Revenue at risk</div><div class="v">₹18,740</div></div>
+    <div class="kpi"><div class="l">Failed payments</div><div class="v">12</div></div>
+    <div class="kpi"><div class="l">Recovery candidates</div><div class="v">8</div></div>
+    <div class="kpi"><div class="l">Verification required</div><div class="v blue">4</div></div>
+  </div>
+
+  <div class="console">
+    <div class="panel">
+      <div class="panel-h"><span class="ttl">Failed payments · 4 of 12</span></div>
+      <div class="panel-b" id="txnlist"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h">
+        <span class="ttl" id="phead">AXIOM reasoning console</span>
+        <span style="display:flex;gap:8px">
+          <button class="btn" id="run" style="padding:8px 16px;font-size:13px">Run Simulation</button>
+          <button class="btn btn-ghost" id="reset" style="padding:8px 16px;font-size:13px">Reset</button>
+        </span>
+      </div>
+      <div class="panel-b" id="stage"></div>
+    </div>
+  </div>
+
+  <div class="flow">MODEL <b>→</b> REASONING <b>→</b> VERIFICATION <b>→</b> ACTION</div>
+</div></section>
+
+<!-- WHY VERIFY -->
+<section><div class="wrap sec">
+  <span class="eyebrow">Why this matters</span>
+  <h2 style="margin-top:12px">Why Verification Before Action?</h2>
+  <div class="cards">
+    <div class="card"><h3>Reason</h3><p>Financial actions require contextual reasoning — the failure code, the customer's history, the merchant's policy and the timing all change the right answer.</p></div>
+    <div class="card"><h3>Verify</h3><p>The model's reasoning is checked before consequential actions. A verifier that scores each step independently can refuse one the reasoner was willing to take.</p></div>
+    <div class="card"><h3>Escalate</h3><p>Uncertain or high-risk cases can be routed to stronger models or human review, rather than being resolved by a confident guess.</p></div>
+  </div>
+  <p class="note">AXIOM's process verifier (XD-PRM) and adaptive-depth controller are implemented in
+  the repository. Their adaptation to financial dimensions, and the escalation policy above, are in
+  progress and not yet production implemented.</p>
+</div></section>
+
+<!-- PMOS -->
+<section id="pmos"><div class="wrap sec">
+  <span class="eyebrow">The longer-term vision</span>
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:12px">
+    <h2>PMOS — Private Merchant Operating System</h2>
+    <span class="badge badge-gray">Roadmap / product vision</span>
+  </div>
+  <p class="lede">The same Financial AXIOM model can eventually become the intelligence layer behind
+  a local-first merchant operating system for micro-businesses. None of the directions below are
+  implemented.</p>
+  <div class="grid6">
+    <div class="g6">Revenue Recovery<span>Entry point</span></div>
+    <div class="g6">Cash Flow<span>Roadmap</span></div>
+    <div class="g6">Reconciliation<span>Roadmap</span></div>
+    <div class="g6">Receivables<span>Roadmap</span></div>
+    <div class="g6">Inventory<span>Roadmap</span></div>
+    <div class="g6">Customer Intelligence<span>Roadmap</span></div>
+  </div>
+</div></section>
+
+<!-- LOCAL FIRST -->
+<section><div class="wrap sec">
+  <span class="eyebrow">Architecture</span>
+  <h2 style="margin-top:12px">Local-First by Design</h2>
+  <p class="lede">AXIOM is being designed toward local-first financial intelligence — keeping
+  merchant business context under merchant control wherever practical, and escalating only when
+  additional model capability is required. A 1.5B-parameter foundation is what makes local
+  execution realistic at all.</p>
+  <p class="note">This is a design goal, not a guarantee. We make no claim of absolute privacy, zero
+  cloud use, guaranteed data locality, or compliance certification.</p>
+</div></section>
+
+<!-- FINAL -->
+<section><div class="wrap final">
+  <p class="big">AI agents can act.<br>AXIOM is being built to make sure they know<br><em>when they should act.</em></p>
+  <div class="mark">AXIOM</div>
+  <p class="msub">Financial Reasoning SLM · Verified Revenue Autopilot</p>
+</div></section>
+
+<footer>
+  Qwen2.5-1.5B · SFT/QLoRA · GRPO · Reasoning · XD-PRM · Financial Adaptation<br>
+  Simulation uses synthetic data · No Razorpay integration · No real payment actions
+</footer>
+
+<script>
+const TXNS = [
+  {
+    id:"AX-1042", amt:"₹12,499", amtN:12499,
+    fail:"Insufficient funds", cust:"High-value customer",
+    ctx:[["Failure","Insufficient funds"],["Customer","High historical transaction value"],
+         ["History","Multiple successful prior payments"],["Merchant policy","Avoid repeated immediate retries"]],
+    opts:[
+      {l:"A",t:"Immediate retry",d:"Retry the charge now against the same instrument.",v:"rej",vt:"REJECTED"},
+      {l:"B",t:"Delayed retry",d:"Reschedule the attempt to a later, higher-liquidity window.",v:"rej",vt:"PARTIAL"},
+      {l:"C",t:"Payment link + targeted reminder",d:"Delayed retry paired with a customer-controlled payment path.",v:"sel",vt:"SELECTED"},
+      {l:"D",t:"Escalate",d:"Route to a stronger model or a human reviewer.",v:"rej",vt:"NOT REQUIRED"}
+    ],
+    checks:[["Logical consistency","pass","PASS"],["Financial risk","pass","PASS"],
+            ["Merchant policy","pass","PASS"],["Customer impact","pass","PASS"],
+            ["Confidence","pass","PASS"],["Expected recovery","pass","PASS"]],
+    verdict:"pass", action:"Delayed retry + targeted payment link",
+    reason:"Immediate retry has lower expected suitability for this failure context. A delayed retry with a targeted payment path better satisfies the merchant's recovery policy while reducing unnecessary repeated attempts.",
+    queued:"Payment recovery action queued — simulated"
+  },
+  {
+    id:"AX-1043", amt:"₹3,240", amtN:3240,
+    fail:"Bank decline", cust:"Returning customer",
+    ctx:[["Failure","Bank decline — issuer side"],["Customer","Returning customer"],
+         ["History","Prior payments settled normally"],["Merchant policy","Respect issuer cool-off window"]],
+    opts:[
+      {l:"A",t:"Immediate retry",d:"Retry now against the declining issuer.",v:"rej",vt:"REJECTED"},
+      {l:"B",t:"Delayed retry",d:"Retry after the issuer cool-off window elapses.",v:"sel",vt:"SELECTED"},
+      {l:"C",t:"Payment link + targeted reminder",d:"Shift the payment path to the customer.",v:"rej",vt:"PARTIAL"},
+      {l:"D",t:"Escalate",d:"Route to a stronger model or a human reviewer.",v:"rej",vt:"NOT REQUIRED"}
+    ],
+    checks:[["Logical consistency","pass","PASS"],["Financial risk","pass","PASS"],
+            ["Merchant policy","pass","PASS"],["Customer impact","pass","PASS"],
+            ["Confidence","pass","PASS"],["Expected recovery","pass","PASS"]],
+    verdict:"pass", action:"Delayed retry after issuer cool-off",
+    reason:"An issuer-side decline is unlikely to clear on an immediate retry. Deferring past the cool-off window respects merchant policy and avoids burning a recovery attempt against a declining issuer.",
+    queued:"Payment recovery action queued — simulated"
+  },
+  {
+    id:"AX-1044", amt:"₹1,980", amtN:1980,
+    fail:"Authentication failure", cust:"New customer",
+    ctx:[["Failure","Authentication failure"],["Customer","New customer — no payment history"],
+         ["History","No prior successful payment"],["Merchant policy","Limit contact for first-time customers"]],
+    opts:[
+      {l:"A",t:"Immediate retry",d:"Retry the charge without re-authentication.",v:"rej",vt:"REJECTED"},
+      {l:"B",t:"Delayed retry",d:"Retry later against the same failing auth path.",v:"rej",vt:"REJECTED"},
+      {l:"C",t:"Payment link + targeted reminder",d:"Send a fresh payment path the customer can authenticate.",v:"sel",vt:"SELECTED"},
+      {l:"D",t:"Escalate",d:"Route to a stronger model or a human reviewer.",v:"rej",vt:"NOT REQUIRED"}
+    ],
+    checks:[["Logical consistency","pass","PASS"],["Financial risk","pass","PASS"],
+            ["Merchant policy","rev","REVISE"],["Customer impact","pass","PASS"],
+            ["Confidence","pass","PASS"],["Expected recovery","pass","PASS"]],
+    revise:"Merchant policy limits contact frequency for first-time customers. Reasoning revised: single reminder instead of a reminder sequence.",
+    verdict:"pass", action:"Payment link + single reminder",
+    reason:"An authentication failure will not clear on retry — the payment path itself must change. A fresh link lets the customer re-authenticate. Contact reduced to one touch after the policy check flagged the original reminder sequence.",
+    queued:"Payment recovery action queued — simulated"
+  },
+  {
+    id:"AX-1051", amt:"₹1,021", amtN:1021,
+    fail:"Insufficient funds", cust:"Dormant customer · 3rd failure",
+    ctx:[["Failure","Insufficient funds — 3rd consecutive"],["Customer","Dormant — no activity in 7 months"],
+         ["History","Two prior recovery attempts failed"],["Merchant policy","Escalate on repeated failure"]],
+    opts:[
+      {l:"A",t:"Immediate retry",d:"Retry the charge now.",v:"rej",vt:"REJECTED"},
+      {l:"B",t:"Delayed retry",d:"Schedule a fourth attempt.",v:"rej",vt:"REJECTED"},
+      {l:"C",t:"Payment link + targeted reminder",d:"Contact a dormant customer again.",v:"rej",vt:"REJECTED"},
+      {l:"D",t:"Escalate",d:"Route to a stronger model or a human reviewer.",v:"sel",vt:"SELECTED"}
+    ],
+    checks:[["Logical consistency","pass","PASS"],["Financial risk","esc","ESCALATE"],
+            ["Merchant policy","esc","ESCALATE"],["Customer impact","esc","ESCALATE"],
+            ["Confidence","esc","LOW"],["Expected recovery","esc","LOW"]],
+    verdict:"esc", action:"Escalated — human review required",
+    reason:"Three consecutive failures against a dormant customer make recovery intent ambiguous. Confidence falls below the threshold at which an autonomous action is appropriate, so no action is taken and the case is routed to human review.",
+    queued:"No autonomous action taken — routed for human review — simulated"
+  }
+];
+
+const STAGES = ["Understand","Generate options","Reason","Verify","Decide","Act"];
+let sel = 0, running = false, timers = [];
+
+const $ = id => document.getElementById(id);
+const clear = () => { timers.forEach(clearTimeout); timers = []; };
+const wait = (fn, ms) => timers.push(setTimeout(fn, ms));
+
+function renderList(){
+  $("txnlist").innerHTML = TXNS.map((t,i) => `
+    <div class="txn ${i===sel?'on':''}" data-i="${i}">
+      <div class="r1"><span class="amt">${t.amt}</span><span class="id">${t.id}</span></div>
+      <div class="r2">${t.fail}</div>
+      <div class="r3">${t.cust}</div>
+      <span class="pill ${t.done ? (t.verdict==='esc'?'esc':'pass') : 'pend'}">${
+        t.done ? (t.verdict==='esc'?'Escalated':'Verified') : 'Pending'}</span>
+    </div>`).join("");
+  document.querySelectorAll(".txn").forEach(el =>
+    el.onclick = () => { if(running) return; sel = +el.dataset.i; renderList(); renderIdle(); });
+}
+
+function stagesHTML(active){
+  return `<div class="stages">` + STAGES.map((s,i) => `
+    <div class="stg ${active===i?'act':(active>i?'done':'')}">
+      <div class="sn">${String(i+1).padStart(2,'0')}</div><div class="st">${s.toUpperCase()}</div>
+    </div>`).join("") + `</div>`;
+}
+
+function ctxHTML(t){
+  return `<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:12px">
+      <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--faint)">PAYMENT #${t.id}</span>
+      <span style="font-size:23px;font-weight:770;letter-spacing:-.025em">${t.amt}</span>
+    </div>
+    <div class="ctx">${t.ctx.map(c=>`<div class="c"><div class="k">${c[0]}</div><div class="v">${c[1]}</div></div>`).join("")}</div>`;
+}
+
+function renderIdle(){
+  const t = TXNS[sel];
+  $("phead").textContent = `AXIOM reasoning console · ${t.id}`;
+  $("stage").innerHTML = stagesHTML(-1) + `<div style="margin-top:14px">` + ctxHTML(t) + `</div>
+    <div class="empty">Press <b>Run Simulation</b> to reason through this payment.</div>`;
+}
+
+function run(){
+  if(running) return;
+  running = true; clear();
+  const t = TXNS[sel];
+  $("run").disabled = true;
+  const S = $("stage");
+  const base = () => ctxHTML(t);
+  let html = "";
+
+  const paint = (active, extra) => { S.innerHTML = stagesHTML(active) +
+    `<div style="margin-top:14px">` + base() + (extra||"") + `</div>`; };
+
+  paint(0);
+  wait(()=>paint(1, `<div class="fade"><div class="ttl" style="font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;font-weight:700;color:var(--ink-2);margin:4px 0 10px">Candidate recovery actions</div>`
+    + t.opts.map(o=>`<div class="opt"><span class="ol">${o.l}</span><div><div class="ot">${o.t}</div><div class="od">${o.d}</div></div></div>`).join("") + `</div>`), 700);
+
+  wait(()=>paint(2, `<div class="fade"><div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;font-weight:700;color:var(--ink-2);margin:4px 0 10px">Reasoning over alternatives</div>`
+    + t.opts.map(o=>`<div class="opt ${o.v==='sel'?'sel':'rej'}"><span class="ol">${o.l}</span><div><div class="ot">${o.t}</div><div class="od">${o.d}</div></div><span class="ov ${o.v}">${o.vt}</span></div>`).join("") + `</div>`), 1900);
+
+  // verification — reveal one row at a time
+  wait(()=>{
+    const rows = t.checks.map(c=>`<div class="vrow"><span class="vk">${c[0]}</span><span class="vst wait" data-k="${c[0]}">…</span></div>`).join("");
+    paint(3, `<div class="fade"><div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;font-weight:700;color:var(--blue-deep);margin:4px 0 8px">AXIOM verification · XD-PRM</div><div id="vbox">${rows}</div></div>`);
+    t.checks.forEach((c,i)=> wait(()=>{
+      const el = document.querySelector(`[data-k="${CSS.escape(c[0])}"]`);
+      if(el){ el.className = "vst " + c[1]; el.textContent = c[2]; }
+    }, 260*(i+1)));
+  }, 3100);
+
+  const vdelay = 3100 + 260*t.checks.length + 500;
+
+  if(t.revise){
+    wait(()=>{
+      const box = $("vbox");
+      if(box) box.insertAdjacentHTML("afterend",
+        `<div class="fade" style="margin-top:12px;padding:11px 14px;background:var(--amber-soft);border:1px solid #F2DFBF;border-radius:6px;font-size:13px;color:var(--ink-2)"><b style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--amber)">REVISE →</b> ${t.revise}</div>`);
+    }, vdelay);
+  }
+
+  const dd = vdelay + (t.revise ? 1100 : 0);
+
+  wait(()=>{
+    const box = $("stage");
+    box.querySelector(".stages").outerHTML = stagesHTML(4);
+    box.insertAdjacentHTML("beforeend",
+      `<div class="verdict ${t.verdict} fade">
+        <div class="vt">${t.verdict==='esc'?'Escalation required':'Verified action'}</div>
+        <div class="vm">${t.action}</div>
+        <div class="vr">${t.reason}</div>
+        <div class="approved ${t.verdict==='esc'?'amber':''}"><span class="dot"></span>${
+          t.verdict==='esc'?'ROUTED TO HUMAN REVIEW':'ACTION APPROVED'}</div>
+      </div>`);
+  }, dd);
+
+  wait(()=>{
+    const box = $("stage");
+    box.querySelector(".stages").outerHTML = stagesHTML(5);
+    box.insertAdjacentHTML("beforeend",
+      `<div class="queued fade">ACTION → SIMULATED · ${t.queued}</div>`);
+    TXNS[sel].done = true;
+    renderList();
+    running = false;
+    $("run").disabled = false;
+  }, dd + 900);
+}
+
+$("run").onclick = run;
+$("reset").onclick = () => {
+  clear(); running = false; $("run").disabled = false;
+  TXNS.forEach(t => t.done = false);
+  renderList(); renderIdle();
+};
+
+renderList();
+renderIdle();
+</script>
+</body>
+</html>
