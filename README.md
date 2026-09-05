@@ -2,181 +2,157 @@
 
 # AXIOM
 
-### Verified Revenue Autopilot
+### The Financial Reasoning SLM
 
-**A local-first intelligence and verification layer for autonomous financial agents.**
+**An open-source small language model, trained by us, being specialized for verified financial
+reasoning and autonomous revenue recovery.**
 
-*Don't just let AI recover revenue. Make sure it knows why it should act.*
+*From AI that can act → AI that knows when it is safe to act.*
 
 <br>
 
+![Base](https://img.shields.io/badge/base-Qwen2.5--1.5B--Instruct-6236FF)
+![Training](https://img.shields.io/badge/training-QLoRA%20SFT%20%2B%20GRPO-FF6B35)
+![Verifier](https://img.shields.io/badge/verifier-XD--PRM%205--head-00A67E)
 ![Stage](https://img.shields.io/badge/stage-research%20prototype-blue)
 ![Python](https://img.shields.io/badge/python-%E2%89%A53.10-3776AB)
-![Models](https://img.shields.io/badge/models-open--weight-success)
-![Razorpay Track](https://img.shields.io/badge/Razorpay%20track-AI%20Revenue%20Recovery-002970)
+![Weights](https://img.shields.io/badge/weights-open-success)
 
 </div>
 
 ---
 
-## What this is
+## We built the model
 
-AXIOM is a **reasoning and verification framework for small language models**, built around a
-five-head cross-domain process reward model (**XD-PRM**) that scores *every reasoning step* before
-that reasoning is trusted.
+**AXIOM is an open-source small language model and reasoning system built by fine-tuning
+Qwen2.5-1.5B-Instruct.** The project combines supervised fine-tuning (SFT / QLoRA), reinforcement
+learning with GRPO, adaptive reasoning depth, and process-level verification into a single trained
+reasoner — not a prompt chain, not an API wrapper, and not an orchestration layer over someone
+else's model.
 
-That framework already exists in this repository. It was built to make small models reason
-*correctly, compactly and self-checkingly* — with a verifier in the loop at training time, at
-decoding time, and at inference time.
+The training stack in this repository is real and complete: a distillation and trace-compression
+pipeline, a QLoRA SFT trainer, a five-head process reward model with its own automated label
+foundry, a GRPO reinforcement-learning loop that optimizes against that frozen verifier, and an
+inference engine that merges the trained adapters and reasons step by step under verifier guidance.
 
-**We are now extending it into a control layer for autonomous financial agents**, starting with
-**revenue recovery on Razorpay**.
+**We are now extending and training AXIOM toward financial reasoning** — where the model evaluates
+financial context, reasons about candidate recovery actions, verifies its own decisions, and
+supports autonomous revenue-recovery workflows on Razorpay.
 
-> **The thesis**
->
-> Payment infrastructure is becoming agentic. Agents will soon retry charges, issue payment links,
-> message customers and move money on a merchant's behalf.
->
-> The hard part is no longer *acting*. It is knowing **when it is safe to act**.
->
-> AXIOM is the reasoning, verification, confidence-gating and escalation layer that sits between an
-> agent's intent and a consequential financial action.
+> **AXIOM is the model.** The Razorpay work is the next domain-specific evolution of that model, not
+> a separate product that happens to call an LLM.
 
-```
-      PAYMENT INFRASTRUCTURE          (Razorpay)
-                 +
-        FINANCIAL AGENTS              (detect, decide, act)
-                 +
-   AXIOM REASONING + VERIFICATION     (this repository)
-                 =
-   TRUSTWORTHY AUTONOMOUS REVENUE RECOVERY
-```
+### The model at a glance
 
-<table>
-<tr>
-<td width="33%" valign="top">
-
-**Built**
-<br><br>
-The AXIOM reasoning + verification framework: XD-PRM, label foundry, compression, GRPO,
-verifier-guided decoding, adaptive depth, SSE serving.
-
-</td>
-<td width="33%" valign="top">
-
-**Building**
-<br><br>
-The financial layer: payment context, financial verification dimensions, recovery action
-engine, Razorpay sandbox integration.
-
-</td>
-<td width="33%" valign="top">
-
-**Vision**
-<br><br>
-**PMOS** — a Private Merchant Operating System where a merchant talks naturally and verified
-agents run the business.
-
-</td>
-</tr>
-</table>
-
-> **Read this before any other section.** Everything below is explicitly labelled **Built**,
-> **Building**, or **Planned**. No Razorpay integration exists in this repository today. No
-> financial verifier is implemented today. PMOS is not implemented. Those are the roadmap — the
-> foundation they are being built on is what is already here.
-
----
-
-## The Problem
-
-A failed payment is not a payment problem. It is a **decision problem**.
-
-When a ₹12,499 charge fails, something has to decide what happens next — and the right answer
-depends on context the payment gateway alone does not reason over:
-
-| The signal | The question it raises |
+| | |
 |---|---|
-| Insufficient funds at 11pm | Retry now, or wait for a salary-cycle date? |
-| A first-time customer | Is a reminder helpful, or does it read as spam? |
-| A high-lifetime-value customer | Is aggressive retry worth the relationship risk? |
-| A third failure this week | Is this recoverable at all, or is it churn? |
-| A ₹200 failure vs a ₹120,000 failure | Should a human ever see this? |
-
-Get it right and revenue returns. Get it wrong and you have annoyed a good customer, burned a
-retry, triggered a bank flag, or silently written off recoverable money.
-
-### Why an ordinary LLM agent is not enough
-
-Handing this to a generic LLM agent with tool access creates a **new trust problem**:
-
-- It produces fluent reasoning that **is not checked** before it becomes an action.
-- It is **confidently wrong** in the same tone as it is confidently right.
-- It has **no calibrated sense** of when it should stop and ask a human.
-- Its mistakes are not text. They are **money movement, customer contact, and reputational damage**.
-- Its decisions are **not auditable** step by step after the fact.
-
-A chatbot that is wrong writes a bad sentence. A financial agent that is wrong charges the wrong
-customer at the wrong moment.
-
-**The missing layer is verification** — an independent judgment on *the reasoning itself*, before
-the action is allowed to execute.
+| **Foundation** | `Qwen/Qwen2.5-1.5B-Instruct` (open-weight, Apache 2.0) |
+| **Supervised fine-tuning** | QLoRA — 4-bit NF4, double quant, bfloat16 compute, LoRA r=16 / α=32, all linear layers |
+| **Reinforcement learning** | GRPO (TRL) against a composite reward with a **frozen** process verifier, KL-leashed to the SFT reference |
+| **Reward signal** | `R = 1.0·correctness + 0.5·R_aggregate(XD-PRM) − 0.1·length − 0.2·repetition` |
+| **Verifier** | XD-PRM — backbone + domain embedding + **5 scalar heads scored per reasoning step** |
+| **Inference** | Verifier-guided decoding (best-of-B step selection) + adaptive reasoning depth |
+| **Training data** | Compressed reasoning traces distilled from OpenR1-Math-220k |
+| **Published checkpoint** | [`prabindersinghh/axiom-qwen2.5-1.5b-reasoning`](https://huggingface.co/prabindersinghh/axiom-qwen2.5-1.5b-reasoning) |
+| **Financial specialization** | **In progress — being trained/adapted. Not complete.** |
 
 ---
 
-## The Core Idea
+## What We Actually Built
+
+Everything in this section is implemented in this repository and verifiable in the source. This is
+the model and the machinery that produced it.
+
+### The training pipeline
 
 ```
-Detect → Understand → Reason → Generate strategies → VERIFY → Act → Measure → Improve
-                                                       ▲
-                                                       │
-                                       the step everyone else skips
+ingest → distill traces → compress → SFT (QLoRA) → PRM label foundry → XD-PRM → GRPO → eval → serve
+  00          01             02          03               04              05       06     07     08
 ```
 
-An agent detects a failed or at-risk payment, understands the transaction and customer context,
-generates *candidate* recovery strategies, reasons through them — and then, critically, **a
-separate verifier scores that reasoning** before anything executes.
+Nine numbered stages, each a thin CLI in [`scripts/`](scripts/) over real logic in
+[`src/axiom/`](src/axiom/), driven by Hydra configs in [`configs/`](configs/).
 
-The verifier returns one of three verdicts:
-
-| Verdict | Meaning | Result |
+| Stage | What we built | Implementation |
 |---|---|---|
-| **PASS** | Reasoning is sound, risk acceptable, confidence high | Execute the action |
-| **REVISE** | Reasoning is weak or a dimension fails | Re-reason with the failure as feedback |
-| **ESCALATE** | Low confidence, high value, or high risk | Hand to a stronger model — or to a human |
+| **Reasoning-trace distillation** | Step-segmented reasoning traces from OpenR1-Math-220k, using one shared segmentation contract so training, scoring and decoding never drift | [`distill/`](src/axiom/distill/) · [`common/steps.py`](src/axiom/common/steps.py) |
+| **Sparse reasoning compression** | Embedding-driven novelty pruning + token-budget cap, with an **answer-preservation check** that reverts the compression if the answer stops being derivable | [`distill/compress.py`](src/axiom/distill/compress.py) |
+| **QLoRA supervised fine-tuning** | 4-bit NF4 QLoRA over TRL's `SFTTrainer` with PEFT, LoRA r=16 / α=32 on all linear layers, curriculum ordering, and a sequence-length filter that **drops** rather than silently truncates | [`sft/train_sft.py`](src/axiom/sft/train_sft.py) |
+| **XD-PRM process verifier** | Backbone + domain embedding + five independent scalar heads, pooled at each step's boundary sentinel, trained with masked multi-task losses | [`prm/model.py`](src/axiom/prm/model.py) · [`prm/heads.py`](src/axiom/prm/heads.py) |
+| **Automated label foundry** | Per-step labels for all five heads at near-zero annotation cost — MC rollouts, cross-encoder NLI, embedding novelty, rollout variance | [`prm/labeling/`](src/axiom/prm/labeling/) |
+| **The G2 quality gate** | The verifier must prove itself on held-out data before anything may consume it; failure **raises and blocks the pipeline** | [`prm/validate.py`](src/axiom/prm/validate.py) |
+| **GRPO reinforcement learning** | TRL `GRPOTrainer` with our composite reward, the verifier **frozen**, KL-leashed to the SFT reference, with periodic reward audits | [`rl/train_grpo.py`](src/axiom/rl/train_grpo.py) · [`rl/rewards.py`](src/axiom/rl/rewards.py) |
+| **Verifier-guided decoding** | Sample B candidate next-steps, score each with the frozen XD-PRM, advance the best, prune the rest | [`inference/verifier_decode.py`](src/axiom/inference/verifier_decode.py) |
+| **Adaptive reasoning depth** | Confidence-driven `continue / expand / exit` controller under hard depth and token caps | [`inference/adaptive_depth.py`](src/axiom/inference/adaptive_depth.py) |
+| **Unified inference engine** | Merges the trained LoRA adapters into a servable policy and reasons step by step, emitting per-head telemetry | [`inference/engine.py`](src/axiom/inference/engine.py) |
+| **Serving + explainability** | FastAPI + SSE streaming of live reasoning with per-step verifier scores, rendered by a React console | [`serve/`](src/axiom/serve/) · [`frontend/`](frontend/) |
 
-This is not a safety wrapper bolted on afterward. In AXIOM the verifier is the **hub**: it is
-already consumed by four separate subsystems in this repository.
+### How the model was trained
+
+| Parameter | Value |
+|---|---|
+| Base model | `Qwen/Qwen2.5-1.5B-Instruct` |
+| SFT method | QLoRA — 4-bit NF4, double quantization, bfloat16 compute |
+| LoRA config | r=16, α=32, dropout 0.05, target modules: all linear |
+| SFT corpus | 38 compressed reasoning traces (from 300 OpenR1-Math-220k rows scanned) |
+| GRPO | Group size G=8 (G=4 under T4 memory), KL coefficient 0.04, lr 1e-6 |
+| GRPO reward | correctness 1.0 · process 0.5 · length −0.1 · repetition −0.2 |
+| XD-PRM backbone | `Qwen/Qwen2.5-0.5B-Instruct` + domain embedding + 5 scalar heads |
+| G2 gate thresholds | AUC ≥ 0.70 · max head correlation ≤ 0.90 · ECE ≤ 0.15 |
+| Training hardware | Tesla T4 16 GB (Kaggle) — `batch_size=1`, `grad_accum=32`, `max_seq_tokens=2048` |
+
+**A published checkpoint exists:**
+[`prabindersinghh/axiom-qwen2.5-1.5b-reasoning`](https://huggingface.co/prabindersinghh/axiom-qwen2.5-1.5b-reasoning),
+together with the distilled trace dataset
+[`prabindersinghh/axiom-reasoning-traces`](https://huggingface.co/datasets/prabindersinghh/axiom-reasoning-traces).
+
+### The honest status of that training run
+
+We would rather state this plainly than have a reviewer find it themselves.
+
+- **The training stack is complete and real.** Every stage above is implemented, tested, and
+  runnable. That is the part we are confident about.
+- **The training run was small.** SFT used **38 compressed traces**. A serious SFT run uses
+  thousands. The corpus was throttled by a `max_reasoning_chars=6000` filter needed to exclude
+  competition-length OpenR1-Math traces, which cut 300 scanned rows down to 46 usable ones.
+- **The T4 forced significant compromises** — `batch_size=1`, `max_seq_tokens=2048`, and
+  `rollouts_k=1` instead of 8, which degrades the Logic head from a soft value to a binary label
+  and hurts calibration.
+- **The repository's own notes are inconsistent about how completely the end-to-end run finished.**
+  The model card describes SFT as performed and publishes a checkpoint; earlier project notes
+  record dtype and bitsandbytes conflicts during the T4 run. We flag the discrepancy rather than
+  resolve it in our own favour.
+- **Benchmark accuracy is not measured.** See [Measured vs. not measured](#measured-vs-not-measured).
+
+Completing a full run on adequate hardware is roadmap item 0.
 
 ---
 
-## Why AXIOM
+## The Verified Financial SLM
 
-**Status: Built.** Everything in this section exists in this repository today.
+The architectural thesis of the project, in one line:
 
-AXIOM was built as a **verifier-centric** framework for small language models. Its central claim is
-that a process-level verifier — one that scores *each reasoning step* rather than only the final
-answer — can be reused as the reward signal, the decoding guide, and the confidence source at once.
+```
+   AXIOM MODEL              XD-PRM VERIFIER            FINANCIAL SPECIALIZATION
+  reasoning capability   +  decision verification   +  domain capability
+                                       =
+                            VERIFIED FINANCIAL SLM
+```
 
-### XD-PRM — the five-head cross-domain process verifier
+These are three separable things, and keeping them separable is the point:
 
-A backbone model plus a domain embedding plus **five independent scalar heads**, reading the pooled
-hidden state at each step's boundary sentinel:
-
-| Head | What it scores | Label source in the foundry |
+| Component | What it contributes | Status |
 |---|---|---|
-| **Logic** | Does this step actually follow? | Monte-Carlo rollouts — how often the prefix reaches the gold answer |
-| **Commonsense** | Is this plausible in the world? | NLI entailment proxy (optional teacher judge) |
-| **Consistency** | Does it contradict earlier steps? | Cross-encoder NLI against the prior prefix |
-| **Efficiency** | Is this step doing new work? | Cosine novelty of the step embedding vs. priors |
-| **Confidence** | How certain are we, calibrated? | Rollout answer variance / modal agreement |
+| **AXIOM model** | The reasoning itself — a trained SLM that thinks in explicit, segmented steps | **Built** |
+| **XD-PRM verifier** | An *independent* judgment on that reasoning, step by step, with authority to block it | **Built** |
+| **Financial specialization** | Domain competence — payment context, recovery strategy, financial risk | **Being adapted** |
 
-Implemented in [`src/axiom/prm/`](src/axiom/prm/) — heads, model, dataset, scoring, and the
-[label foundry](src/axiom/prm/labeling/).
+A model that reasons but cannot be checked is unsafe for money. A verifier with no model to check
+is inert. A verified reasoner with no domain knowledge is generic. AXIOM's bet is that all three
+have to be built together — and the first two already are.
 
-### The verifier is reused four times
-
-This is the architectural point, and it is why the framework transfers to financial decisions:
+**Crucially, the verifier is not a wrapper bolted on afterward.** In AXIOM it is the hub: the same
+XD-PRM is consumed by four separate subsystems.
 
 ```
                     ┌───────────────────────────────────────────┐
@@ -193,116 +169,231 @@ This is the architectural point, and it is why the framework transfers to financ
                 └──────────┘ └────────┘ └──────────┘ └───────────┘
 ```
 
-1. **Composite-reward GRPO** — `R = 1.0·correctness + 0.5·R_aggregate − 0.1·length − 0.2·repetition`.
-   Verifiable correctness dominates so the policy cannot win by gaming the learned reward; the
-   length and repetition terms are explicit anti-reward-hacking guards. The PRM is **frozen** during
-   RL. ([`src/axiom/rl/rewards.py`](src/axiom/rl/rewards.py))
+### The five heads
 
-2. **Verifier-guided decoding** — sample *B* candidate next-steps, score each with the frozen
-   XD-PRM, advance the best, prune the rest, and keep the survivors for the explainability view.
-   ([`src/axiom/inference/verifier_decode.py`](src/axiom/inference/verifier_decode.py))
-
-3. **Adaptive-depth controller** — the confidence head's uncertainty drives a
-   `continue / expand / exit` decision, so easy questions exit early and hard ones get more
-   compute, under a hard depth and token cap.
-   ([`src/axiom/inference/adaptive_depth.py`](src/axiom/inference/adaptive_depth.py))
-
-4. **The G2 gate** — the verifier must *prove itself* on a held-out split before anything is allowed
-   to consume it. Thresholds are enforced in code, and failure raises and blocks the pipeline:
-   `AUC ≥ 0.70`, `max pairwise head correlation ≤ 0.90`, `ECE ≤ 0.15`.
-   ([`src/axiom/prm/validate.py`](src/axiom/prm/validate.py))
-
-### Why this matters for finance
-
-Read the same capabilities again as financial primitives:
-
-| AXIOM capability | Financial-agent equivalent |
-|---|---|
-| Step-level verification | Check the *reasoning* behind a money decision, not just its output |
-| Calibrated confidence head | A principled trigger for **when to escalate to a human** |
-| Adaptive reasoning depth | Spend compute on the ₹120,000 case, not the ₹200 one |
-| Hard quality gate | Refuse to deploy a verifier that has not proven itself |
-| Reasoning compression | Lower cost per decision at portfolio scale |
-| Small-model foundation | Economics that survive millions of decisions |
-
-The framework was not built for payments. But a process verifier that gates consequential steps is
-exactly the primitive that agentic finance is missing.
+| Head | What it scores | How it is labelled |
+|---|---|---|
+| **Logic** | Does this step actually follow? | Monte-Carlo rollouts — how often the prefix reaches the gold answer |
+| **Commonsense** | Is this plausible in the world? | NLI entailment proxy (optional teacher judge) |
+| **Consistency** | Does it contradict earlier steps? | Cross-encoder NLI against the prior prefix |
+| **Efficiency** | Is this step doing new work? | Cosine novelty of the step embedding vs. priors |
+| **Confidence** | How certain are we, calibrated? | Rollout answer variance / modal agreement |
 
 ---
 
-## AXIOM for Revenue Recovery
+## AXIOM as a Financial SLM
 
-**Status: Building.** This is the target architecture. The AXIOM layers are built; the financial
-layers are the work.
+**Status: current research direction.** The reasoning model and its verifier are built. The
+financial specialization is what we are training and adapting now. It is **not complete**, and
+nothing below should be read as a finished capability.
+
+```mermaid
+flowchart TD
+    A["Qwen2.5-1.5B-Instruct<br/><i>open-weight foundation</i>"] --> B
+    B["Open-source fine-tuning<br/><i>distilled + compressed reasoning traces</i>"] --> C
+    C["SFT / QLoRA<br/><i>4-bit NF4, LoRA r=16</i>"] --> D
+    D["RL / GRPO<br/><i>composite reward, frozen verifier</i>"] --> E
+    E["AXIOM small reasoning model"] --> F
+    F["Adaptive reasoning + verification<br/><i>XD-PRM, verifier-guided decoding</i>"] --> G
+    G["Financial domain training / adaptation"] --> H
+    H["Verified financial decisions"] --> I
+    I["Revenue recovery agent"]
+
+    classDef built fill:#0f3d2e,stroke:#1a7f5a,color:#fff
+    classDef now fill:#3d2f0f,stroke:#a37b1a,color:#fff
+    classDef planned fill:#2a2a3d,stroke:#5a5a8f,color:#fff
+    class A,B,C,D,E,F built
+    class G now
+    class H,I planned
+```
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+**Built and trained**
+<br><br>
+Qwen2.5-1.5B foundation · trace distillation and compression · QLoRA SFT · XD-PRM verifier and
+label foundry · GRPO · verifier-guided decoding · adaptive depth · inference and serving.
+
+</td>
+<td width="33%" valign="top">
+
+**Being trained / adapted**
+<br><br>
+Financial domain specialization — teaching the model to reason over payment context, recovery
+strategy, and financial risk, and adapting the verifier's heads to financial dimensions.
+
+</td>
+<td width="33%" valign="top">
+
+**Planned productization**
+<br><br>
+Razorpay integration, the recovery action engine, the decision audit surface, and eventually the
+**PMOS** merchant layer.
+
+</td>
+</tr>
+</table>
+
+> **Read this before any other section.** Every claim below is labelled **Built**, **Being
+> adapted**, or **Planned**. No Razorpay integration exists in this repository today. No financial
+> verifier is implemented today. No financial training results exist today. PMOS is not
+> implemented. The foundation those are being built on — the trained model and its verifier — is
+> what is already here.
+
+---
+
+## Why a Financial SLM instead of a Frontier Model?
+
+This is the engineering hypothesis the project is built to test. It is stated as an objective, not
+as a demonstrated result.
+
+**The setting.** Financial workflows generate an enormous number of decisions. A merchant with
+meaningful volume may see thousands of failed payments a month; a payment processor sees orders of
+magnitude more. The overwhelming majority of those decisions are routine.
+
+**The hypothesis:**
+
+| Claim | Why it plausibly holds |
+|---|---|
+| Not every decision needs a frontier model | Most failed-payment decisions are recurring patterns, not novel reasoning problems |
+| A smaller specialized model can target lower cost and latency | A 1.5B model is cheap enough to run per-decision at volume; a frontier model is not |
+| Domain specialization can improve consistency | Recurring financial workflows reward a model tuned to *those* patterns over a generalist |
+| Difficult and high-risk cases can be escalated | The confidence head already provides a calibrated trigger for handing off |
+| Verification can gate execution | The verifier already has the authority to block a step before it becomes an action |
+
+**AXIOM is designed toward** a tiered decision economy:
+
+```
+Routine decisions        ->  local small model, shallow reasoning       (the bulk)
+Ambiguous decisions      ->  deeper adaptive reasoning + verification
+High-risk / high-value   ->  escalate to a stronger model
+Low confidence           ->  escalate to a human
+```
+
+The mechanisms that make this possible are already built — the small-model foundation, the
+adaptive-depth controller, reasoning compression, verifier-guided decoding, and a calibrated
+confidence signal. **What is not yet built is the financial policy that maps value and risk onto
+those controls.** That is the current work, and we make no efficiency or cost claims until it is
+measured.
+
+---
+
+## The Problem AXIOM Financial Targets
+
+A failed payment is not a payment problem. It is a **decision problem**.
+
+When a ₹12,499 charge fails, something must decide what happens next — and the right answer depends
+on context the payment gateway alone does not reason over:
+
+| The signal | The question it raises |
+|---|---|
+| Insufficient funds at 11pm | Retry now, or wait for a salary-cycle date? |
+| A first-time customer | Is a reminder helpful, or does it read as spam? |
+| A high-lifetime-value customer | Is aggressive retry worth the relationship risk? |
+| A third failure this week | Is this recoverable at all, or is it churn? |
+| A ₹200 failure vs a ₹120,000 failure | Should a human ever see this? |
+
+### Why a generic LLM agent is not enough
+
+- It produces fluent reasoning that **is not checked** before it becomes an action.
+- It is **confidently wrong** in the same tone as it is confidently right.
+- It has **no calibrated sense** of when to stop and ask a human.
+- Its mistakes are not text. They are **money movement and customer contact**.
+- Its decisions are **not auditable** step by step after the fact.
+
+A chatbot that is wrong writes a bad sentence. A financial agent that is wrong charges the wrong
+customer at the wrong moment. **The missing layer is a model that reasons in verifiable steps and a
+verifier with the authority to stop it** — which is precisely what AXIOM already is, and why the
+financial specialization is a model-training problem rather than a prompt-engineering one.
+
+---
+
+## AXIOM Financial for Revenue Recovery
+
+**Status: target architecture.** The model and verifier layers are built; the financial layers are
+the work in progress.
 
 ```mermaid
 flowchart TD
     A["Razorpay payment signals<br/><i>failed / at-risk payments, webhooks</i>"] --> B
-    B["Context engine<br/><i>transaction + customer + merchant history</i>"] --> C
-    C["AXIOM reasoner<br/><i>small-model reasoning, adaptive depth</i>"] --> D
+    B["Financial context<br/><i>transaction + customer + merchant history</i>"] --> C
+    C["AXIOM Financial SLM<br/><i>reasons about recovery strategies</i>"] --> D
     D["Candidate recovery actions<br/><i>retry - link - reminder - defer - escalate</i>"] --> E
-    E["Financial verifier<br/><i>XD-PRM adapted to financial dimensions</i>"] --> F
+    E["Process / financial verification<br/><i>XD-PRM adapted to financial dimensions</i>"] --> F
     F{"Verdict"}
-    F -->|PASS| G["Execute Razorpay action"]
+    F -->|PASS| G["Recovery action"]
     F -->|REVISE| C
     F -->|ESCALATE| H["Stronger model<br/>or human review"]
     G --> I["Outcome<br/><i>recovered / not recovered</i>"]
     H --> I
-    I --> J["Learning + optimization<br/><i>outcomes become verifier signal</i>"]
+    I --> J["Further training + evaluation<br/><i>outcomes become training signal</i>"]
     J -.feedback.-> C
 
-    style C fill:#1a3a5c,color:#fff
-    style E fill:#5c1a3a,color:#fff
-    style F fill:#3a1a5c,color:#fff
+    style C fill:#6236FF,color:#fff
+    style E fill:#00A67E,color:#fff
+    style F fill:#FF6B35,color:#fff
 ```
-
-### Stage by stage
 
 | Stage | What it does | Status |
 |---|---|---|
-| **Payment signals** | Ingest failed / at-risk payment events and their failure reasons | Planned |
-| **Context engine** | Assemble transaction value, failure code, customer history, timing, prior attempts | Planned |
-| **AXIOM reasoner** | Reason over the case, allocating depth by difficulty and value | **Built** (framework) — financial adaptation planned |
+| **Payment signals** | Ingest failed / at-risk payment events and failure reasons | Planned |
+| **Financial context** | Assemble transaction value, failure code, customer history, timing, prior attempts | Planned |
+| **AXIOM Financial SLM** | Reason over the case, allocating depth by difficulty and value | **Model built** · financial adaptation in progress |
 | **Candidate actions** | Generate *multiple* strategies rather than committing to the first | Planned |
-| **Financial verifier** | Score the reasoning on financial dimensions, per step | Planned (adapts built XD-PRM) |
+| **Financial verification** | Score the reasoning on financial dimensions, per step | Planned (adapts built XD-PRM) |
 | **PASS / REVISE / ESCALATE** | Gate the action on verdict and calibrated confidence | Planned (adapts built gate + depth controller) |
-| **Razorpay action** | Execute the approved recovery action | Planned |
-| **Outcome + learning** | Record what actually happened; feed it back as signal | Planned |
+| **Recovery action** | Execute the approved action against Razorpay | Planned |
+| **Outcome → training** | Feed real outcomes back as further training and evaluation signal | Planned |
 
-The novel part is not the loop. It is that **the verifier is independent of the reasoner** and has
-the authority to block it.
+The verdicts:
 
----
+| Verdict | Meaning | Result |
+|---|---|---|
+| **PASS** | Reasoning sound, risk acceptable, confidence high | Execute the action |
+| **REVISE** | Reasoning weak or a dimension fails | Re-reason with the failure as feedback |
+| **ESCALATE** | Low confidence, high value, or high risk | Stronger model — or a human |
 
-## Financial Action Verification
+### Planned financial verification dimensions
 
-**Status: Planned.** These dimensions are the financial adaptation of the five heads that exist
-today. **They are not implemented in this repository yet.**
-
-AXIOM's existing verifier scores reasoning on logic, commonsense, consistency, efficiency and
-confidence. The financial verifier applies the same *architecture* — independent scalar heads over a
-shared backbone, scored per step — to dimensions that matter for money:
+**Not implemented.** These are the financial adaptation of the five heads that exist today, using
+the same architecture — independent scalar heads over a shared backbone, scored per step.
 
 | Planned dimension | Question it answers | Closest existing head |
 |---|---|---|
-| **Logical validity** | Does the recovery reasoning actually follow from the payment facts? | Logic |
+| **Logical validity** | Does the recovery reasoning follow from the payment facts? | Logic |
 | **Financial risk** | What is the downside if this action is wrong? | *new* |
 | **Policy compliance** | Does this respect merchant rules, retry limits, contact policy? | *new* |
 | **Confidence** | How calibrated is this decision — should it escalate? | Confidence |
 | **Expected recovery** | What is the realistic probability this recovers the payment? | *new* |
 | **Customer impact** | Does this damage a relationship worth more than the transaction? | *new* |
 
-**The gating principle carried over from the G2 gate:** a verifier that has not demonstrated
+**The principle carried over from the G2 gate:** a verifier that has not demonstrated
 discrimination and calibration on held-out data does not get to approve financial actions. The
 existing pipeline already refuses to proceed on a verifier that fails its thresholds. That property
 is the one most worth keeping.
+
+### Razorpay integration surface
+
+**Status: planned. No Razorpay integration exists in this repository** — no API client, no webhook
+handler, no credential handling, no payment code of any kind.
+
+| Surface | Intended use |
+|---|---|
+| Payment events / webhooks | Detect failed and at-risk payments as they happen |
+| Transaction context | Amount, failure code, method, timing, retry history |
+| Customer context | Payment history, lifetime value, prior recovery outcomes |
+| Recovery actions | Retry scheduling, payment links, reminders, UPI recovery flows |
+| Test / sandbox mode | **All development and demonstration in test mode** |
+| Outcome measurement | Recovery attributed back to the decision that caused it |
 
 ---
 
 ## Example Decision
 
-**Status: Product design.** This is the intended workflow, not a recorded system output. The
-financial reasoning and verification layers described here are not implemented yet.
+**Status: product design.** This is the intended workflow, not a recorded model output. The
+financial reasoning and verification layers shown here are not implemented yet.
 
 ```
 INCOMING SIGNAL
@@ -315,7 +406,7 @@ INCOMING SIGNAL
   Time           23:10 IST, Tuesday
 ```
 
-**Candidate strategies generated by the reasoner:**
+**Candidate strategies the model would generate:**
 
 | # | Strategy | Reasoning sketch |
 |---|---|---|
@@ -340,143 +431,134 @@ Strategy 2 — delayed retry, T+2 days, with a soft reminder at T+1
 ```
 
 Strategy 1 is rejected on *expected recovery* and *financial risk* — an immediate retry against a
-balance that just failed is a predictable waste. Note that the rejection is **legible**: it names
-the dimension that failed and why. That auditability is the point.
+balance that just failed is a predictable waste. The rejection is **legible**: it names the
+dimension that failed and why. That auditability is the point.
 
 Had the amount been ₹120,000, or the customer new, or the failure the third this week, the
-confidence signal would drop and the same machinery would return **ESCALATE** instead. The system's
-value is as much in the cases it refuses as the ones it approves.
+confidence signal would drop and the same machinery would return **ESCALATE**. The system's value is
+as much in the cases it refuses as the ones it approves.
 
 ---
 
-## PMOS — Private Merchant Operating System
+## Productization Layer — PMOS
 
-**Status: Vision.** Not implemented. This is the broader product direction that the same verified
-intelligence layer eventually enables.
+**Status: product vision / roadmap. Not implemented.**
 
-Revenue recovery is the entry point, not the ceiling. The same reason → verify → act loop
-generalises to the rest of a merchant's operations.
+PMOS (**Private Merchant Operating System**) is the eventual merchant-facing product layer that sits
+*on top of* the Financial AXIOM model. It is the application surface, not the technical core.
 
-The eventual vision is an operating system for a micro-business where the merchant simply
-**communicates naturally** and verified agents handle the operations behind it:
+```
+        AXIOM MODEL                 trained open-source reasoning SLM        [built]
+             ↓
+        FINANCIAL AXIOM             domain-specialized financial reasoning   [being adapted]
+             ↓
+        VERIFICATION                XD-PRM + financial dimensions            [built / adapting]
+             ↓
+        AGENTIC FINANCIAL           verified autonomous workflows            [planned]
+        WORKFLOWS
+             ↓
+        PMOS                        merchant experience                      [vision]
+```
+
+Once the model can make verified financial decisions, the same loop generalises across a merchant's
+operations. **All of the following are planned extensions, none are implemented:**
 
 | Direction | What it would mean |
 |---|---|
-| Bookkeeping | Records updated from natural description, not forms |
-| Reconciliation | Payments matched to invoices automatically |
-| Receivables / udhaar | Informal credit tracked and chased with judgment |
 | Revenue recovery | The Razorpay entry point above |
-| Cash-flow forecasting | Forward view built from real transaction history |
-| Inventory forecasting | Restock timing from demand patterns |
-| Payment reminders | Sent with context and timing, not on a blind schedule |
+| Reconciliation | Payments matched to invoices automatically |
+| Cash-flow reasoning | Forward view built from real transaction history |
+| Receivables / udhaar | Informal credit tracked and chased with judgment |
+| Inventory | Restock timing reasoned from demand patterns |
 | Customer intelligence | Who is valuable, who is at risk |
-| Business simulation | "What if I extend 30-day terms?" answered before committing |
-| Verified business history | A track record built from verified events |
+| Business decision support | "What if I extend 30-day terms?" answered before committing |
 
-Every one of these is a **consequential action taken on a merchant's behalf**, which is precisely
-why the verification layer has to come first. PMOS is not achievable by making the chat interface
-better. It is achievable by making the *decisions* trustworthy.
+Every one of these is a **consequential action taken on a merchant's behalf**, which is exactly why
+the verified model has to come first. PMOS is not achievable by improving a chat interface. It is
+achievable by making the *decisions* trustworthy — which is a model and verification problem.
 
-**Revenue recovery is the wedge because it is the one where the value is immediately measurable in
-rupees.**
+**Revenue recovery is the wedge because it is where the value is immediately measurable in rupees.**
 
 ---
 
-## Local-First Privacy
+## Local-First Deployment
 
-**Status: Architecture goal.** Framed as a design direction, not a guarantee. No privacy,
-compliance, or security property is certified or proven in this repository.
+**Status: architectural design goal.** Not a guarantee, and not the headline.
 
-A merchant's transaction ledger, customer list and cash position are among the most sensitive data
-they hold. The architectural intent is to keep that context under merchant control by default:
+The financial model and merchant intelligence layer are **being designed for local-first deployment
+where practical**. A merchant's ledger, customer list and cash position are among the most sensitive
+data they hold, and the intent is to keep that context under merchant control by default, escalating
+only when a decision genuinely requires a stronger model and with the minimum context required.
 
-```
-Merchant business context   ->  kept local by default
-          |
-AXIOM reasoning             ->  run locally where the small-model foundation allows
-          |
-Escalation                  ->  only when the decision genuinely needs a stronger model,
-                                and with the minimum context required
-```
-
-**What supports this direction today:** the pipeline runs entirely on **open-weight models** with no
+**What makes this plausible today:** the entire pipeline runs on **open-weight models** with no
 proprietary API required — Qwen2.5, Phi-4-mini / Phi-3-mini, all-MiniLM-L6-v2, and a cross-encoder
 NLI model. The one optional paid path is a teacher judge for commonsense labels, which is capped and
-falls back to a free NLI proxy when no API key is present. The framework is small-model-first by
-construction, which is what makes local execution plausible at all.
+falls back to a free NLI proxy without an API key. A 1.5B model is small enough for local execution
+to be realistic at all — which is itself an argument for the SLM approach.
 
 **What is explicitly not claimed:** zero data transfer, regulatory compliance, production-grade
-security, or an audited privacy guarantee. Those require implementation and proof that do not exist
-here yet.
+security, or any audited privacy guarantee. Those require implementation and proof that do not exist
+here.
 
 ---
 
-## Why Small-Model Reasoning Matters
+## Measured vs. Not Measured
 
-This is not a cost footnote. At payment-portfolio scale it is the difference between a viable system
-and a demo.
+We separate these deliberately.
 
-**The economics.** A merchant with meaningful volume may see thousands of failed payments a month.
-Routing every one through a frontier model is not economically sensible — and the overwhelming
-majority of those decisions are routine.
+### Measured
 
-**The AXIOM answer, already built into the framework:**
-
-| Mechanism | Effect | Status |
+| Result | Value | Scope — read this |
 |---|---|---|
-| Small-model foundation (0.5B–7B) | Low cost and latency per decision | **Built** |
-| Adaptive-depth controller | Easy cases exit early; hard cases get more compute | **Built** |
-| Reasoning compression | Fewer tokens per trace with an answer-preservation check | **Built** |
-| Verifier-guided decoding | Better output per unit of compute via best-of-B pruning | **Built** |
-| Confidence-triggered escalation | Frontier models and humans reserved for cases that need them | **Built** (as a controller) · financial policy planned |
+| Token reduction from sparse compression | **59.5%** | Measured on **46 GSM8K traces** on a Kaggle T4, answer-preservation check passing. A real measurement on a small corpus — not a benchmark-scale result. |
 
-The tiered picture the financial layer is aiming at:
+### Not measured
 
-```
-Routine decisions        ->  local small model, shallow reasoning       (the bulk)
-Ambiguous decisions      ->  deeper adaptive reasoning + verification
-High-risk / high-value   ->  escalate to a stronger model
-Low confidence           ->  escalate to a human
-```
+- **Benchmark accuracy on GSM8K / MMLU / StrategyQA is not measured.** Earlier project documents
+  carried figures for these. Those were **architecture-predicted estimates** derived from the
+  literature on comparable GRPO and PRM work — not experimental results — and they are **not
+  reported as results here**.
+- **XD-PRM AUC and ECE are not confirmed measurements.** `AUC ≥ 0.70` and `ECE ≤ 0.15` are **gate
+  thresholds enforced in code** ([`prm/validate.py`](src/axiom/prm/validate.py)), not observed
+  outcomes.
+- **No financial training results, financial benchmarks, recovery rates, or Razorpay metrics exist
+  of any kind.** The financial specialization is in progress.
 
-The adaptive-depth controller exists and works on reasoning benchmarks. **Applying it to a
-value-and-risk-aware financial escalation policy is roadmap work, not something the repository does
-today.**
+### Known limitations
+
+- Training corpus was **38 traces** for SFT. This is very small, and we say so rather than let a
+  reviewer discover it.
+- Full training run pending adequate hardware (L4 / A100); T4 forced `batch_size=1`,
+  `max_seq_tokens=2048`, `rollouts_k=1`.
+- `rollouts_k=1` degrades the Logic head from a soft value to a binary label, hurting calibration.
+- OpenR1-Math-220k traces are long and competition-level; the `max_reasoning_chars=6000` filter cut
+  300 scanned rows to 46 usable traces.
+- vLLM is unstable on Kaggle T4 (CUDA 12.1); the `HFEngine` fallback is slower and loses KV-cache
+  reuse during GRPO sampling.
+- The cross-domain claim is architecturally supported but **not yet demonstrated empirically**.
+- No LICENSE file is currently present in this repository.
 
 ---
 
-## Razorpay Integration Vision
+## What We Are Building Next
 
-**Status: Planned. No Razorpay integration exists in this repository.** There is no Razorpay API
-client, no webhook handler, no credential handling, and no payment code of any kind today.
-
-The intended integration surface:
-
-| Surface | Intended use | Status |
+| # | Roadmap item | Depends on |
 |---|---|---|
-| Payment events / webhooks | Detect failed and at-risk payments as they happen | Planned |
-| Transaction context | Amount, failure code, method, timing, retry history | Planned |
-| Customer context | Payment history, lifetime value, prior recovery outcomes | Planned |
-| Recovery actions | Retry scheduling, payment links, reminders, UPI recovery flows | Planned |
-| Test / sandbox mode | **All development and demonstration in test mode** | Planned |
-| Outcome measurement | Recovery attributed back to the decision that caused it | Planned |
+| **0** | Complete the training run on adequate hardware and measure real benchmark numbers | L4 / A100 access |
+| **1** | **Financial reasoning corpus** — build the training data that specializes AXIOM for payment and recovery reasoning | — |
+| **2** | **Financial domain training** — SFT + GRPO adaptation of the AXIOM model toward financial decisions | 1 |
+| **3** | **Financial verification layer** — the six financial dimensions, adapting the existing head architecture and gate discipline | XD-PRM (built) |
+| **4** | **Razorpay test integration** — sandbox events, context retrieval, action execution | 2 |
+| **5** | **Recovery action engine** — retry scheduling, payment links, reminders, deferral, escalation routing | 3, 4 |
+| **6** | **Evaluation framework** — recovery rate, escalation rate, unsafe decisions, auditability, latency | 5 |
+| **7** | **PMOS merchant layer** — generalise the verified loop beyond recovery | 6 |
 
-**Development principle:** every recovery action is executed against **test/sandbox credentials**
-until the verification layer has demonstrated its behaviour. The system is being built so that the
-verifier can block an action — which only means something if the action was genuinely going to
-execute.
+Items 1–6 are the Razorpay scope. Item 7 is the longer product direction.
 
----
+### How we intend to evaluate
 
-## Demo / Evaluation
-
-**Status: Planned evaluation design. No results exist yet — none of the metrics below have been
-measured.**
-
-The intended demonstration: process a batch of failed and at-risk payments end to end and show, for
-each one, the reasoning, the verification verdict, the action taken, and the outcome.
-
-**Metrics we intend to report — honestly, including the ones that make us look bad:**
+No results exist yet. When they do, we intend to report all of the following — including the ones
+that make us look bad:
 
 | Metric | Why it matters |
 |---|---|
@@ -486,97 +568,21 @@ each one, the reasoning, the verification verdict, the action taken, and the out
 | Verified actions | How many actions passed verification before executing |
 | Escalation rate | How often the system correctly declined to act alone |
 | Action latency | Whether verification is fast enough to be operationally real |
-| Unsafe / incorrect decisions | **Actions that should not have been approved** |
-| Auditability | Whether every decision can be reconstructed step by step |
+| **Unsafe / incorrect decisions** | **Actions that should not have been approved** |
+| **Auditability** | Whether every decision can be reconstructed step by step |
 
-The last two are the ones that matter for a verification project. A system that recovers more
-revenue while occasionally doing something indefensible has not solved the problem it claims to
-solve. **We will not report any of these numbers until they are measured.**
-
----
-
-## What Exists Today
-
-Strictly what is in this repository. Nothing in this section is aspirational.
-
-### Implemented
-
-| Component | Location | What it is |
-|---|---|---|
-| **XD-PRM** | [`src/axiom/prm/`](src/axiom/prm/) | Backbone + domain embedding + 5 scalar heads, pooled at step sentinels, with masked multi-task losses |
-| **Label foundry** | [`src/axiom/prm/labeling/`](src/axiom/prm/labeling/) | MC rollouts, NLI consistency, embedding novelty, rollout-variance confidence, optional teacher judge |
-| **G2 gate** | [`src/axiom/prm/validate.py`](src/axiom/prm/validate.py) | Held-out AUC / head-correlation / ECE gate that raises and blocks downstream use |
-| **Sparse compression** | [`src/axiom/distill/compress.py`](src/axiom/distill/compress.py) | Novelty-threshold pruning + token-budget cap + answer-preservation revert |
-| **QLoRA SFT** | [`src/axiom/sft/`](src/axiom/sft/) | 4-bit NF4 fine-tuning, LoRA r=16, curriculum ordering, sequence-length filtering |
-| **Composite-reward GRPO** | [`src/axiom/rl/`](src/axiom/rl/) | TRL GRPO with correctness + PRM + length + repetition terms, frozen verifier |
-| **Verifier-guided decoding** | [`src/axiom/inference/verifier_decode.py`](src/axiom/inference/verifier_decode.py) | Best-of-B step selection with PRM scoring and candidate pruning |
-| **Adaptive depth** | [`src/axiom/inference/adaptive_depth.py`](src/axiom/inference/adaptive_depth.py) | `continue / expand / exit` on confidence-head uncertainty, plus a self-consistency signal |
-| **Shared contracts** | [`src/axiom/common/`](src/axiom/common/) | One definition each of step segmentation, answer matching, token counting, rollout engine, schemas |
-| **Serving** | [`src/axiom/serve/`](src/axiom/serve/) | FastAPI + SSE streaming of steps with per-head scores and depth decisions |
-| **Explainability UI** | [`frontend/`](frontend/) | React + Vite console rendering the live reasoning ledger and verifier telemetry |
-| **Pipeline CLIs** | [`scripts/`](scripts/) | `00_download_data` → `08_serve`, thin CLIs over `src/` |
-| **Config system** | [`configs/`](configs/) | Hydra config groups; ablations are CLI overrides, not code edits |
-| **Tests** | [`tests/`](tests/) | 33 contract tests across segmentation, answers, metrics, schemas, compression, labels |
-
-### Measured
-
-| Result | Value | Scope — read this |
-|---|---|---|
-| Token reduction from sparse compression | **59.5%** | Measured on **46 GSM8K traces** on a Kaggle T4, with the answer-preservation check passing. A real measurement on a small corpus — not a benchmark-scale result. |
-
-### Not measured
-
-**This is important and we state it plainly.** The training pipeline was **not fully completed** on
-the available hardware. A Kaggle T4 (16 GB) required aggressive adaptations — `batch_size=1`,
-`max_seq_tokens=2048`, `rollouts_k=1` instead of 8 — and dtype / bitsandbytes conflicts prevented SFT
-and PRM labeling from completing end to end.
-
-Consequently:
-
-- **Downstream benchmark accuracy on GSM8K / MMLU / StrategyQA is not measured.** Earlier versions of
-  this README carried projected figures derived from the literature. They were architecture-predicted
-  estimates, not experimental results, and they are **not reported as results here**.
-- **XD-PRM AUC and ECE are not confirmed measurements.** The values `AUC ≥ 0.70` and `ECE ≤ 0.15` are
-  **gate thresholds enforced in code**, not observed outcomes.
-- No financial, recovery, or Razorpay metric of any kind exists.
-
-Establishing these numbers on adequate hardware is roadmap item 0.
-
-### Known limitations
-
-- Training incomplete on T4; benchmark deltas pending an L4 / A100 run.
-- `rollouts_k=1` degrades the Logic head from a soft value to a binary label, hurting calibration.
-- OpenR1-Math-220k traces are long and competition-level; the `max_reasoning_chars=6000` filter
-  reduced 300 scanned rows to **46 usable traces**. The SFT corpus is small.
-- vLLM is unstable on Kaggle T4 (CUDA 12.1); the `HFEngine` fallback is slower and loses KV-cache
-  reuse during GRPO sampling.
-- The cross-domain claim is architecturally supported but **not yet demonstrated empirically** across
-  domains.
-- No LICENSE file is currently present in this repository.
-
----
-
-## What We Are Building Next
-
-| # | Roadmap item | Depends on |
-|---|---|---|
-| **0** | Complete the training pipeline on adequate hardware and measure real benchmark numbers | L4 / A100 access |
-| **1** | **Financial context layer** — assemble transaction, customer and merchant history into a reasoning-ready case | — |
-| **2** | **Financial verification layer** — the six financial dimensions, adapting the existing head architecture and gate discipline | XD-PRM (built) |
-| **3** | **Razorpay test integration** — sandbox events, context retrieval, action execution | 1 |
-| **4** | **Recovery action engine** — retry scheduling, payment links, reminders, deferral, escalation routing | 2, 3 |
-| **5** | **Decision dashboard** — per-decision audit trail: reasoning, verdict, action, outcome | 4 |
-| **6** | **Evaluation framework** — the metrics above, measured on a realistic failed-payment batch | 4 |
-| **7** | **PMOS merchant layer** — generalise the verified loop beyond recovery | 5, 6 |
-
-Items 1–6 are the Razorpay buildathon scope. Item 7 is the longer product direction.
+The last two matter most for a verification project. A system that recovers more revenue while
+occasionally doing something indefensible has not solved the problem it claims to solve. **We will
+not report any of these numbers until they are measured.**
 
 ---
 
 ## Research Foundation — Original AXIOM
 
-**AXIOM was not built for Razorpay.** It was built as a reasoning-in-small-models research project,
-and that history is the reason the financial layer is credible rather than speculative.
+**AXIOM was not built for Razorpay.** It began as an open-source reasoning-SLM research project —
+model training, reinforcement learning, and process verification — and that history is exactly why
+the financial direction is credible rather than speculative. The financial work is a *specialization
+of a model we already trained*, not a new idea wearing a model's clothes.
 
 > **Original AXIOM** — *Adaptive eXplainable Intelligence for Optimized Micro-Reasoning*
 >
@@ -584,6 +590,16 @@ and that history is the reason the financial layer is credible rather than specu
 > self-checking, adaptive reasoners. A single process reward model (XD-PRM) scores every reasoning
 > step on five axes and acts as the hub for reinforcement learning, verifier-guided decoding, and an
 > adaptive-depth controller.
+
+The progression:
+
+```
+Original AXIOM      open-source reasoning SLM + training + verification research
+       ↓
+Current evolution   financial specialization of that model
+       ↓
+Razorpay            first high-impact application for verified financial agents
+```
 
 - **Built for** Samsung ennovateX AX Hackathon 2026, Problem Statement 06 — *Enhancing Reasoning in
   Small Language Models (SLMs) using Reinforcement Learning*
@@ -609,14 +625,14 @@ loop; and the **verifier-guided adaptive-depth** decoder.
 | **Degree & Dept.** | B.Tech CSBS | B.Tech ECE |
 | **Year** | 2nd Year | 2nd Year |
 
-**This repository is the Razorpay productization track of that work**, extending the existing
-framework toward verified financial decision-making. The research foundation and its authorship
-stand as they are.
+**This repository is the financial-specialization track of that work.** The research foundation and
+its authorship stand as they are.
 
 ### Models and datasets
 
-**Models used** (all open-weight, Apache 2.0 / MIT):
-[Qwen2.5-1.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct) (student) ·
+**Foundation and supporting models** (all open-weight, Apache 2.0 / MIT):
+[Qwen2.5-1.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct) (**the base model we
+fine-tuned**) ·
 [Qwen2.5-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-7B-Instruct) ·
 [Qwen2.5-0.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct) (XD-PRM backbone) ·
 [Phi-4-mini-instruct](https://huggingface.co/microsoft/Phi-4-mini-instruct) ·
@@ -624,11 +640,11 @@ stand as they are.
 [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) ·
 [nli-deberta-v3-base](https://huggingface.co/cross-encoder/nli-deberta-v3-base)
 
-**Published** —
-[prabindersinghh/axiom-qwen2.5-1.5b-reasoning](https://huggingface.co/prabindersinghh/axiom-qwen2.5-1.5b-reasoning) ·
-[prabindersinghh/axiom-reasoning-traces](https://huggingface.co/datasets/prabindersinghh/axiom-reasoning-traces)
+**Published by us** —
+[prabindersinghh/axiom-qwen2.5-1.5b-reasoning](https://huggingface.co/prabindersinghh/axiom-qwen2.5-1.5b-reasoning) (model) ·
+[prabindersinghh/axiom-reasoning-traces](https://huggingface.co/datasets/prabindersinghh/axiom-reasoning-traces) (dataset)
 
-**Datasets** —
+**Datasets used** —
 [GSM8K](https://huggingface.co/datasets/openai/gsm8k) ·
 [MMLU](https://huggingface.co/datasets/cais/mmlu) ·
 [StrategyQA](https://huggingface.co/datasets/ChilleD/StrategyQA) ·
@@ -674,6 +690,16 @@ axiom/
 
 ## Quickstart
 
+### Use the published model
+
+```python
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+model_id = "prabindersinghh/axiom-qwen2.5-1.5b-reasoning"
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto")
+```
+
 ### CPU — tests only, no GPU
 
 ```bash
@@ -683,7 +709,7 @@ pip install -e .
 pytest -m "not slow" -q
 ```
 
-### GPU — full pipeline
+### GPU — train the model yourself
 
 ```bash
 pip install vllm && pip install -e . && pip install -r requirements.txt
@@ -707,7 +733,8 @@ make serve                                     # FastAPI on :8000
 cd frontend && npm install && npm run dev      # console on :5173
 ```
 
-The frontend falls back to a labelled sample trace when no GPU backend is running.
+Streams live per-step reasoning with the five head scores, the aggregate reward, and the
+adaptive-depth decisions. Falls back to a labelled sample trace when no GPU backend is running.
 
 ---
 
@@ -716,14 +743,22 @@ The frontend falls back to a labelled sample trace when no GPU backend is runnin
 [Architecture](docs/architecture.md) · [Features](docs/features.md) ·
 [Tech stack & OSS](docs/tech-stack.md) · [Installation](docs/installation.md) ·
 [User guide](docs/user-guide.md) · [Agentic AI & open-weight usage](docs/ax.md) ·
+[Model card](hf_model_card.md) · [Dataset card](hf_dataset_card.md) ·
 [Engineering charter](CLAUDE.md) · [Full design](PLAN.md)
 
 ---
 
 <div align="center">
 
-**AXIOM** — reasoning and verification for autonomous financial agents.
+**We are not wrapping a frontier model around Razorpay.**
 
-*From AI that can act → AI that knows when it is safe to act.*
+We built an open-source reasoning SLM. We fine-tuned Qwen2.5-1.5B with QLoRA SFT and GRPO.
+We built process-level verification around it. Now we are specializing that model for financial
+reasoning and using it to build verified autonomous financial agents.
+
+<br>
+
+*AXIOM is evolving from an open-source reasoning SLM into a domain-specialized Financial SLM
+for verified autonomous financial decisions.*
 
 </div>
