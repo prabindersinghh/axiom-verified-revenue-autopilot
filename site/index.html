@@ -4,225 +4,355 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AXIOM — Verified Revenue Autopilot</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%233395FF'/><text x='16' y='23' font-size='19' font-weight='800' font-family='system-ui,sans-serif' fill='white' text-anchor='middle'>A</text></svg>">
 <meta name="description" content="AXIOM is an open-source small language model built by fine-tuning Qwen2.5-1.5B with SFT/QLoRA and GRPO, now being adapted toward financial reasoning and verified autonomous revenue recovery.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230A0E15'/><circle cx='16' cy='16' r='6' fill='%233395FF'/><ellipse cx='16' cy='16' rx='13' ry='4.5' fill='none' stroke='%233395FF' stroke-width='1.4' opacity='.7'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
 :root{
-  --blue:#3395FF; --blue-deep:#1B6FD6; --blue-soft:#EAF3FE; --blue-line:#C4DEFC;
-  --ink:#0A1628; --ink-2:#33445C; --muted:#6B7C93; --faint:#93A2B5;
-  --line:#E4E9F0; --line-2:#EFF3F8; --bg:#FFFFFF; --bg-2:#FAFBFD;
-  --green:#0E8A5F; --green-soft:#E7F6F0; --amber:#B4690E; --amber-soft:#FDF3E4;
-  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
-  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  --void:#04060A; --ground:#070A11; --surface:#0C111A; --surface-2:#111823;
+  --line:#1B2432; --line-2:#141C27;
+  --text:#E9EEF6; --muted:#93A1B5; --faint:#63718A;
+  --blue:#3395FF; --blue-br:#7FC0FF; --blue-dp:#1B6FD6; --blue-soft:#0E1F35;
+  --green:#3DD68C; --green-soft:#0C2419;
+  --amber:#F0B24A; --amber-soft:#2A1E0B;
+  --disp:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
-  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
-.wrap{max-width:1120px;margin:0 auto;padding:0 32px}
-section{border-bottom:1px solid var(--line-2)}
-h1,h2,h3{margin:0;letter-spacing:-.02em;line-height:1.15}
+body{margin:0;background:var(--void);color:var(--text);font-family:var(--sans);
+  font-size:15.5px;line-height:1.62;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3{margin:0;font-family:var(--disp);line-height:1.1;letter-spacing:-.03em}
 p{margin:0}
-a{color:var(--blue-deep);text-decoration:none}
-a:hover{text-decoration:underline}
-.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--muted);font-weight:600}
-.badge{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;
-  text-transform:uppercase;font-weight:700;padding:5px 10px;border-radius:4px;
-  background:var(--blue-soft);color:var(--blue-deep);border:1px solid var(--blue-line)}
-.badge-gray{background:var(--bg-2);color:var(--muted);border-color:var(--line)}
-.sim-tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;
-  letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--amber);
-  background:var(--amber-soft);border:1px solid #F2DFBF;padding:4px 9px;border-radius:4px}
+a{color:var(--blue-br);text-decoration:none}
+a:hover{color:#fff}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:3px}
 
-/* ---------- nav ---------- */
-nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);
-  backdrop-filter:saturate(180%) blur(10px);border-bottom:1px solid var(--line)}
-nav .wrap{display:flex;align-items:center;justify-content:space-between;height:56px}
-.brand{font-weight:800;letter-spacing:.14em;font-size:14px}
-.navlinks{display:flex;gap:26px;font-size:13.5px;color:var(--ink-2)}
-.navlinks a{color:var(--ink-2)}
-@media(max-width:720px){.navlinks{display:none}}
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+#bg canvas{display:block;width:100%;height:100%}
+.vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse 70% 55% at 50% 42%,transparent 0%,rgba(4,6,10,.55) 72%,rgba(4,6,10,.94) 100%)}
+main{position:relative;z-index:2}
+.wrap{max-width:1140px;margin:0 auto;padding:0 30px}
 
-/* ---------- hero ---------- */
-.hero{padding:88px 0 72px}
-.hero h1{font-size:76px;font-weight:800;letter-spacing:-.045em;margin:20px 0 0}
-.hero h2{font-size:34px;font-weight:700;color:var(--ink);margin:14px 0 0;letter-spacing:-.03em}
-.hero p.sub{font-size:17.5px;color:var(--ink-2);max-width:660px;margin:20px 0 0;line-height:1.62}
-.strip{display:flex;flex-wrap:wrap;align-items:center;gap:0;margin:38px 0 0;
-  border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg-2)}
-.strip .node{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ink-2);
-  padding:11px 15px;white-space:nowrap}
-.strip .node.hl{color:var(--blue-deep);background:#fff}
-.strip .arw{color:var(--blue);font-size:13px;padding:0 1px}
-.cta-row{display:flex;align-items:center;gap:22px;margin:36px 0 0;flex-wrap:wrap}
-.btn{display:inline-block;background:var(--blue);color:#fff;font-weight:650;font-size:14.5px;
-  padding:13px 24px;border-radius:7px;border:none;cursor:pointer;font-family:var(--sans);
-  transition:background .15s}
-.btn:hover{background:var(--blue-deep);text-decoration:none;color:#fff}
-.btn-ghost{background:#fff;color:var(--ink);border:1px solid var(--line);font-weight:600}
-.btn-ghost:hover{background:var(--bg-2);color:var(--ink);border-color:var(--faint)}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.link-sm{font-size:14px;color:var(--ink-2);border-bottom:1px solid var(--line);padding-bottom:1px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--faint);font-weight:500}
+.badge{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;
+  text-transform:uppercase;font-weight:600;padding:6px 12px;border-radius:100px;
+  background:rgba(51,149,255,.09);color:var(--blue-br);
+  border:1px solid rgba(51,149,255,.32)}
+.tag{font-family:var(--mono);font-size:9px;letter-spacing:.12em;font-weight:600;
+  text-transform:uppercase;padding:3px 7px;border-radius:3px;margin-left:9px;
+  vertical-align:2px;white-space:nowrap}
+.tag.b{background:rgba(51,149,255,.13);color:var(--blue-br);border:1px solid rgba(51,149,255,.3)}
+.tag.p{background:rgba(240,178,74,.12);color:var(--amber);border:1px solid rgba(240,178,74,.3)}
+.tag.r{background:rgba(255,255,255,.04);color:var(--faint);border:1px solid var(--line)}
+.sim-tag{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;
+  letter-spacing:.13em;text-transform:uppercase;font-weight:600;color:var(--amber);
+  background:rgba(240,178,74,.08);border:1px solid rgba(240,178,74,.28);
+  padding:5px 11px;border-radius:100px}
 
-/* ---------- generic section ---------- */
-.sec{padding:76px 0}
-.sec h2{font-size:33px;font-weight:750;letter-spacing:-.03em}
-.sec .lede{font-size:16.5px;color:var(--ink-2);max-width:700px;margin:18px 0 0;line-height:1.65}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:56px;margin-top:34px}
-@media(max-width:860px){.two{grid-template-columns:1fr;gap:28px}}
-.note{font-size:13px;color:var(--muted);margin-top:14px}
+/* nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:40;height:60px;
+  background:rgba(4,6,10,.72);backdrop-filter:blur(14px) saturate(160%);
+  border-bottom:1px solid rgba(27,36,50,.7)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+.brand{font-family:var(--disp);font-weight:800;letter-spacing:.2em;font-size:15px}
+.brand i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--blue);
+  margin-right:9px;vertical-align:1px;box-shadow:0 0 10px var(--blue)}
+.navlinks{display:flex;gap:28px;font-size:13.5px}
+.navlinks a{color:var(--muted)}
+.navlinks a:hover{color:var(--text)}
+@media(max-width:820px){.navlinks{display:none}}
 
-/* ---------- pipeline ---------- */
-.pipe{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:36px}
-@media(max-width:860px){.pipe{grid-template-columns:1fr}}
-.pstep{border:1px solid var(--line);border-radius:8px;padding:14px 16px;background:#fff;
-  display:flex;gap:14px;align-items:flex-start}
-.pstep .n{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--faint);
-  min-width:22px;padding-top:2px}
-.pstep .t{font-weight:680;font-size:14.5px}
-.pstep .d{font-size:13px;color:var(--muted);margin-top:2px;line-height:1.5}
-.pstep.built{border-left:3px solid var(--blue)}
-.pstep.prog{border-left:3px solid var(--amber);background:#FFFDF9}
-.pstep.plan{border-left:3px solid var(--line);background:var(--bg-2)}
-.tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;font-weight:700;
-  text-transform:uppercase;padding:2px 6px;border-radius:3px;margin-left:8px;vertical-align:2px}
-.tag.b{background:var(--blue-soft);color:var(--blue-deep)}
-.tag.p{background:var(--amber-soft);color:var(--amber)}
-.tag.r{background:var(--bg-2);color:var(--muted);border:1px solid var(--line)}
+/* hero */
+.hero{min-height:auto;display:flex;flex-direction:column;justify-content:center;
+  padding:104px 0 64px}
+.hero h1{font-size:clamp(70px,11.5vw,146px);font-weight:800;letter-spacing:-.055em;
+  margin:18px 0 0;line-height:.88}
+.hero h2{font-family:var(--disp);font-size:clamp(26px,3.6vw,42px);font-weight:600;
+  margin:18px 0 0;letter-spacing:-.03em;
+  background:linear-gradient(96deg,#fff 10%,var(--blue-br) 60%,var(--blue) 95%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .sub{font-size:17px;color:var(--muted);max-width:540px;margin:20px 0 0;line-height:1.66}
+.hero .sub b{color:var(--text);font-weight:600}
+/* keep hero copy legible where the core drifts behind it */
+.hero>*{position:relative;z-index:2}
+.hero h1,.hero h2,.hero .sub{text-shadow:0 2px 26px rgba(4,6,10,.92),0 0 60px rgba(4,6,10,.75)}
 
-/* ---------- demo ---------- */
-.demo{background:var(--bg-2)}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:28px}
-@media(max-width:860px){.kpis{grid-template-columns:repeat(2,1fr)}}
-.kpi{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px 18px}
-.kpi .l{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;
-  color:var(--muted);font-weight:650}
-.kpi .v{font-size:27px;font-weight:750;letter-spacing:-.025em;margin-top:6px}
-.kpi .v.blue{color:var(--blue-deep)}
+.strip{display:flex;flex-wrap:wrap;align-items:center;margin:34px 0 0;gap:2px}
+.strip .node{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--muted);
+  padding:8px 13px;border:1px solid var(--line);border-radius:6px;white-space:nowrap;
+  background:rgba(12,17,26,.62);backdrop-filter:blur(4px)}
+.strip .node.hl{color:var(--blue-br);border-color:rgba(51,149,255,.42);
+  background:rgba(51,149,255,.07);box-shadow:0 0 18px rgba(51,149,255,.12)}
+.strip .arw{color:var(--blue);font-size:12px;padding:0 5px;opacity:.75}
 
-.console{display:grid;grid-template-columns:340px 1fr;gap:14px;margin-top:14px}
-@media(max-width:960px){.console{grid-template-columns:1fr}}
-.panel{background:#fff;border:1px solid var(--line);border-radius:8px}
-.panel-h{padding:12px 16px;border-bottom:1px solid var(--line-2);display:flex;
-  align-items:center;justify-content:space-between;gap:10px}
-.panel-h .ttl{font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;
-  text-transform:uppercase;font-weight:700;color:var(--ink-2)}
-.panel-b{padding:14px 16px}
+.cta{display:flex;align-items:center;gap:24px;margin:42px 0 0;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:9px;background:var(--blue);color:#fff;
+  font-family:var(--sans);font-weight:600;font-size:14.5px;padding:14px 26px;border-radius:8px;
+  border:none;cursor:pointer;transition:transform .16s,box-shadow .16s,background .16s;
+  box-shadow:0 5px 26px rgba(51,149,255,.3)}
+.btn:hover{background:var(--blue-dp);color:#fff;transform:translateY(-2px);
+  box-shadow:0 9px 32px rgba(51,149,255,.42)}
+.btn-ghost{background:rgba(255,255,255,.03);border:1px solid var(--line);color:var(--text);
+  box-shadow:none;font-weight:500}
+.btn-ghost:hover{background:rgba(255,255,255,.07);border-color:var(--faint);color:var(--text);
+  box-shadow:none}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.link-sm{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:2px}
+.link-sm:hover{color:var(--text);border-color:var(--blue)}
 
-.txn{padding:12px 14px;border:1px solid var(--line);border-radius:7px;cursor:pointer;
-  margin-bottom:8px;background:#fff;transition:border-color .13s,background .13s}
-.txn:hover{border-color:var(--blue-line);background:#FCFDFF}
-.txn.on{border-color:var(--blue);background:var(--blue-soft);box-shadow:0 0 0 1px var(--blue)}
+/* sections */
+section{position:relative}
+.sec{padding:104px 0}
+.sec-h2{font-size:clamp(30px,4vw,46px);font-weight:700;margin-top:14px}
+.lede{font-size:16.5px;color:var(--muted);max-width:660px;margin:20px 0 0;line-height:1.68}
+.note{font-size:13px;color:var(--faint);margin-top:18px;max-width:640px;line-height:1.6}
+.panel-bg{background:linear-gradient(180deg,rgba(7,10,17,.55),rgba(7,10,17,.9));
+  border-top:1px solid var(--line-2);border-bottom:1px solid var(--line-2)}
+.solid-bg{background:linear-gradient(180deg,rgba(4,6,10,.86),rgba(4,6,10,.97))}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:38px}
+@media(max-width:880px){.two{grid-template-columns:1fr;gap:30px}}
+.big-claim{font-family:var(--disp);font-size:26px;font-weight:650;letter-spacing:-.028em;
+  line-height:1.24}
+.big-claim em{font-style:normal;color:var(--blue-br)}
+
+/* stack */
+.pipe{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:40px}
+@media(max-width:880px){.pipe{grid-template-columns:1fr}}
+.pstep{border:1px solid var(--line);border-radius:9px;padding:15px 17px;
+  background:rgba(12,17,26,.72);backdrop-filter:blur(6px);display:flex;gap:15px;
+  align-items:flex-start;transition:border-color .2s,transform .2s,background .2s}
+.pstep:hover{border-color:rgba(51,149,255,.4);transform:translateY(-2px);
+  background:rgba(17,24,35,.85)}
+.pstep .n{font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--faint);
+  min-width:20px;padding-top:3px}
+.pstep .t{font-weight:600;font-size:15px;letter-spacing:-.012em}
+.pstep .d{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.52}
+.pstep.built{border-left:2px solid var(--blue)}
+.pstep.prog{border-left:2px solid var(--amber)}
+.pstep.plan{border-left:2px solid var(--line);opacity:.82}
+
+/* demo */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:32px}
+@media(max-width:880px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:rgba(12,17,26,.8);border:1px solid var(--line);border-radius:9px;
+  padding:18px 20px;backdrop-filter:blur(6px)}
+.kpi .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--faint);font-weight:600}
+.kpi .v{font-family:var(--disp);font-size:30px;font-weight:700;letter-spacing:-.03em;margin-top:8px;
+  font-variant-numeric:tabular-nums}
+.kpi .v.blue{color:var(--blue-br)}
+
+.console{display:grid;grid-template-columns:335px 1fr;gap:13px;margin-top:13px}
+@media(max-width:980px){.console{grid-template-columns:1fr}}
+.panel{background:rgba(10,14,22,.9);border:1px solid var(--line);border-radius:10px;
+  backdrop-filter:blur(10px)}
+.panel-h{padding:13px 17px;border-bottom:1px solid var(--line-2);display:flex;
+  align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.panel-h .ttl{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+  font-weight:600;color:var(--muted)}
+.panel-b{padding:15px 17px}
+
+.txn{padding:13px 15px;border:1px solid var(--line);border-radius:8px;cursor:pointer;
+  margin-bottom:9px;background:rgba(17,24,35,.5);transition:all .16s}
+.txn:hover{border-color:rgba(51,149,255,.45);background:rgba(51,149,255,.05)}
+.txn.on{border-color:var(--blue);background:rgba(51,149,255,.1);
+  box-shadow:0 0 0 1px rgba(51,149,255,.45),0 0 22px rgba(51,149,255,.12)}
 .txn .r1{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.txn .amt{font-weight:750;font-size:16px;letter-spacing:-.02em}
-.txn .id{font-family:var(--mono);font-size:10.5px;color:var(--faint);font-weight:600}
-.txn .r2{font-size:12.5px;color:var(--ink-2);margin-top:3px}
-.txn .r3{font-size:11.5px;color:var(--muted);margin-top:2px}
-.pill{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;
-  text-transform:uppercase;font-weight:700;padding:2.5px 7px;border-radius:3px;margin-top:7px}
-.pill.pend{background:var(--bg-2);color:var(--muted);border:1px solid var(--line)}
-.pill.pass{background:var(--green-soft);color:var(--green)}
-.pill.esc{background:var(--amber-soft);color:var(--amber)}
+.txn .amt{font-family:var(--disp);font-weight:700;font-size:17px;letter-spacing:-.025em;
+  font-variant-numeric:tabular-nums}
+.txn .id{font-family:var(--mono);font-size:10px;color:var(--faint);font-weight:500}
+.txn .r2{font-size:12.5px;color:var(--muted);margin-top:4px}
+.txn .r3{font-size:11.5px;color:var(--faint);margin-top:2px}
+.pill{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.1em;
+  text-transform:uppercase;font-weight:600;padding:3px 8px;border-radius:3px;margin-top:9px}
+.pill.pend{background:rgba(255,255,255,.04);color:var(--faint);border:1px solid var(--line)}
+.pill.pass{background:rgba(61,214,140,.11);color:var(--green);border:1px solid rgba(61,214,140,.3)}
+.pill.esc{background:rgba(240,178,74,.11);color:var(--amber);border:1px solid rgba(240,178,74,.3)}
 
-/* stages */
-.stages{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
-.stg{flex:1;min-width:96px;border:1px solid var(--line);border-radius:6px;padding:9px 10px;
-  background:#fff;transition:all .2s}
-.stg .sn{font-family:var(--mono);font-size:9.5px;color:var(--faint);font-weight:700}
-.stg .st{font-size:11.5px;font-weight:680;color:var(--muted);margin-top:2px;letter-spacing:.02em}
-.stg.act{border-color:var(--blue);background:var(--blue-soft)}
-.stg.act .st,.stg.act .sn{color:var(--blue-deep)}
-.stg.done{border-color:var(--blue-line);background:#fff}
-.stg.done .st{color:var(--ink)}
+.stages{display:flex;gap:6px;flex-wrap:wrap}
+.stg{flex:1;min-width:94px;border:1px solid var(--line);border-radius:7px;padding:10px 11px;
+  background:rgba(17,24,35,.5);transition:all .25s}
+.stg .sn{font-family:var(--mono);font-size:9px;color:var(--faint);font-weight:600}
+.stg .st{font-size:11px;font-weight:600;color:var(--muted);margin-top:3px;letter-spacing:.02em}
+.stg.act{border-color:var(--blue);background:rgba(51,149,255,.13);
+  box-shadow:0 0 20px rgba(51,149,255,.18)}
+.stg.act .st,.stg.act .sn{color:var(--blue-br)}
+.stg.done{border-color:rgba(51,149,255,.3)}
+.stg.done .st{color:var(--text)}
 .stg.done .sn::after{content:" ✓";color:var(--blue)}
 
-.ctx{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);
-  border-radius:7px;overflow:hidden;margin-bottom:14px}
+.ctx{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line-2);
+  border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:15px}
 @media(max-width:620px){.ctx{grid-template-columns:1fr}}
-.ctx .c{padding:11px 14px;border-right:1px solid var(--line-2);border-bottom:1px solid var(--line-2)}
-.ctx .c .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--muted);font-weight:650}
-.ctx .c .v{font-size:13.5px;font-weight:600;margin-top:3px;color:var(--ink)}
+.ctx .c{padding:12px 15px;background:rgba(12,17,26,.9)}
+.ctx .c .k{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--faint);font-weight:600}
+.ctx .c .v{font-size:13.5px;font-weight:500;margin-top:4px;color:var(--text)}
 
-.opt{border:1px solid var(--line);border-radius:6px;padding:10px 13px;margin-bottom:7px;
-  display:flex;gap:11px;align-items:flex-start;background:#fff;transition:all .2s}
-.opt .ol{font-family:var(--mono);font-weight:750;font-size:12px;color:var(--faint);min-width:16px}
-.opt .ot{font-size:13.5px;font-weight:620}
-.opt .od{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.45}
-.opt .ov{margin-left:auto;font-family:var(--mono);font-size:10px;font-weight:700;
-  letter-spacing:.07em;padding:3px 8px;border-radius:3px;white-space:nowrap}
-.opt.sel{border-color:var(--blue);background:var(--blue-soft)}
-.opt.sel .ol{color:var(--blue-deep)}
-.opt.rej{opacity:.55}
+.subttl{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+  font-weight:600;color:var(--muted);margin:4px 0 11px}
+.subttl.acc{color:var(--blue-br)}
+
+.opt{border:1px solid var(--line);border-radius:7px;padding:11px 14px;margin-bottom:8px;
+  display:flex;gap:12px;align-items:flex-start;background:rgba(17,24,35,.45);transition:all .3s}
+.opt .ol{font-family:var(--mono);font-weight:700;font-size:12px;color:var(--faint);min-width:15px}
+.opt .ot{font-size:13.5px;font-weight:600}
+.opt .od{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.45}
+.opt .ov{margin-left:auto;font-family:var(--mono);font-size:9.5px;font-weight:600;
+  letter-spacing:.08em;padding:4px 9px;border-radius:3px;white-space:nowrap}
+.opt.sel{border-color:var(--blue);background:rgba(51,149,255,.1);
+  box-shadow:0 0 22px rgba(51,149,255,.13)}
+.opt.sel .ol{color:var(--blue-br)}
+.opt.rej{opacity:.45}
 .ov.sel{background:var(--blue);color:#fff}
-.ov.rej{background:var(--bg-2);color:var(--muted);border:1px solid var(--line)}
+.ov.rej{background:rgba(255,255,255,.04);color:var(--faint);border:1px solid var(--line)}
 
 .vrow{display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:9px 0;border-bottom:1px solid var(--line-2)}
+  padding:10px 0;border-bottom:1px solid var(--line-2)}
 .vrow:last-child{border-bottom:none}
-.vrow .vk{font-size:13.5px;color:var(--ink-2)}
-.vst{font-family:var(--mono);font-size:10px;font-weight:750;letter-spacing:.09em;
-  padding:3px 9px;border-radius:3px}
-.vst.pass{background:var(--green-soft);color:var(--green)}
-.vst.rev{background:var(--amber-soft);color:var(--amber)}
-.vst.esc{background:var(--amber-soft);color:var(--amber)}
-.vst.wait{background:var(--bg-2);color:var(--faint);border:1px solid var(--line)}
+.vrow .vk{font-size:13.5px;color:var(--muted)}
+.vst{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.1em;
+  padding:4px 10px;border-radius:3px}
+.vst.pass{background:rgba(61,214,140,.12);color:var(--green);border:1px solid rgba(61,214,140,.3)}
+.vst.rev,.vst.esc{background:rgba(240,178,74,.12);color:var(--amber);
+  border:1px solid rgba(240,178,74,.3)}
+.vst.wait{background:rgba(255,255,255,.03);color:var(--faint);border:1px solid var(--line)}
 
-.verdict{border-radius:8px;padding:18px 20px;margin-top:14px;border:1px solid}
-.verdict.pass{background:var(--blue-soft);border-color:var(--blue)}
-.verdict.esc{background:var(--amber-soft);border-color:#EBCE9E}
-.verdict .vt{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;font-weight:750;
+.verdict{border-radius:9px;padding:20px 22px;margin-top:15px;border:1px solid}
+.verdict.pass{background:linear-gradient(135deg,rgba(51,149,255,.14),rgba(51,149,255,.05));
+  border-color:rgba(51,149,255,.5)}
+.verdict.esc{background:linear-gradient(135deg,rgba(240,178,74,.13),rgba(240,178,74,.04));
+  border-color:rgba(240,178,74,.45)}
+.verdict .vt{font-family:var(--mono);font-size:10px;letter-spacing:.15em;font-weight:700;
   text-transform:uppercase}
-.verdict.pass .vt{color:var(--blue-deep)}
+.verdict.pass .vt{color:var(--blue-br)}
 .verdict.esc .vt{color:var(--amber)}
-.verdict .vm{font-size:19px;font-weight:730;margin-top:7px;letter-spacing:-.02em}
-.verdict .vr{font-size:13.5px;color:var(--ink-2);margin-top:9px;line-height:1.55}
-.approved{display:inline-flex;align-items:center;gap:9px;background:var(--blue);color:#fff;
-  font-family:var(--mono);font-size:11.5px;font-weight:750;letter-spacing:.11em;
-  padding:10px 18px;border-radius:6px;margin-top:14px;
-  animation:pop .35s cubic-bezier(.2,1.3,.4,1)}
-.approved.amber{background:var(--amber)}
-@keyframes pop{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
-.queued{font-family:var(--mono);font-size:12px;color:var(--ink-2);margin-top:12px;
-  padding:11px 14px;background:var(--bg-2);border:1px dashed var(--line);border-radius:6px}
-.dot{width:7px;height:7px;border-radius:50%;background:#fff;display:inline-block}
-.empty{text-align:center;padding:46px 20px;color:var(--muted);font-size:14px}
-.fade{animation:fade .3s ease}
-@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
-.flow{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em;
-  text-align:center;margin-top:22px}
-.flow b{color:var(--blue-deep);font-weight:700}
+.verdict .vm{font-family:var(--disp);font-size:21px;font-weight:700;margin-top:9px;
+  letter-spacing:-.028em}
+.verdict .vr{font-size:13.5px;color:var(--muted);margin-top:11px;line-height:1.58}
+.approved{display:inline-flex;align-items:center;gap:10px;background:var(--blue);color:#fff;
+  font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.13em;
+  padding:11px 20px;border-radius:7px;margin-top:16px;
+  box-shadow:0 0 30px rgba(51,149,255,.42)}
+.approved.amber{background:var(--amber);color:#231703;box-shadow:0 0 30px rgba(240,178,74,.35)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+.queued{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:13px;
+  padding:12px 15px;background:rgba(255,255,255,.02);border:1px dashed var(--line);
+  border-radius:7px}
+.empty{text-align:center;padding:48px 20px;color:var(--faint);font-size:14px}
+.flow{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.14em;
+  text-align:center;margin-top:26px}
+.flow b{color:var(--blue-br);font-weight:600}
 
 /* cards */
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:32px}
-@media(max-width:860px){.cards{grid-template-columns:1fr}}
-.card{border:1px solid var(--line);border-radius:8px;padding:22px}
-.card h3{font-size:12px;font-family:var(--mono);letter-spacing:.13em;text-transform:uppercase;
-  color:var(--blue-deep);font-weight:750}
-.card p{font-size:14px;color:var(--ink-2);margin-top:9px;line-height:1.58}
-.grid6{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:26px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:36px}
+@media(max-width:880px){.cards{grid-template-columns:1fr}}
+.card{border:1px solid var(--line);border-radius:10px;padding:26px;
+  background:rgba(12,17,26,.6);backdrop-filter:blur(6px);transition:all .22s}
+.card:hover{border-color:rgba(51,149,255,.38);transform:translateY(-3px)}
+.card h3{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--blue-br);font-weight:600}
+.card p{font-size:14px;color:var(--muted);margin-top:11px;line-height:1.6}
+.grid6{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-top:30px}
 @media(max-width:720px){.grid6{grid-template-columns:1fr 1fr}}
-.g6{border:1px solid var(--line);border-radius:7px;padding:13px 15px;background:#fff;
-  font-size:13.5px;font-weight:620}
-.g6 span{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;
-  color:var(--faint);font-weight:700;margin-top:3px;text-transform:uppercase}
+.g6{border:1px solid var(--line);border-radius:8px;padding:15px 17px;
+  background:rgba(12,17,26,.55);font-size:13.5px;font-weight:600}
+.g6 span{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.13em;
+  color:var(--faint);font-weight:600;margin-top:5px;text-transform:uppercase}
+
+.hier{display:flex;flex-direction:column;gap:0;margin-top:32px;max-width:620px}
+.hrow{display:flex;align-items:center;gap:16px;padding:13px 0}
+.hrow .hn{font-family:var(--disp);font-size:15px;font-weight:650;min-width:210px;
+  letter-spacing:-.02em}
+.hrow .hd{font-size:13px;color:var(--muted);flex:1}
+.hbar{width:2px;height:16px;background:linear-gradient(180deg,var(--blue),transparent);
+  margin-left:8px}
 
 /* final */
-.final{padding:96px 0;text-align:center}
-.final .big{font-size:44px;font-weight:780;letter-spacing:-.035em;line-height:1.22}
-.final .big em{font-style:normal;color:var(--blue)}
-.final .mark{margin-top:44px;font-weight:800;letter-spacing:.16em;font-size:19px}
-.final .msub{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:9px;
-  letter-spacing:.08em}
-footer{padding:26px 0 38px;text-align:center;font-family:var(--mono);font-size:11px;
-  color:var(--faint);letter-spacing:.06em;line-height:2}
+.final{padding:130px 0;text-align:center}
+.final .big{font-family:var(--disp);font-size:clamp(32px,5.4vw,60px);font-weight:750;
+  letter-spacing:-.04em;line-height:1.16;text-wrap:balance}
+.final .big em{font-style:normal;
+  background:linear-gradient(96deg,var(--blue-br),var(--blue));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.final .mark{font-family:var(--disp);margin-top:52px;font-weight:800;letter-spacing:.22em;
+  font-size:22px}
+.final .msub{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-top:11px;
+  letter-spacing:.13em}
+footer{padding:30px 0 46px;text-align:center;font-family:var(--mono);font-size:10.5px;
+  color:var(--faint);letter-spacing:.09em;line-height:2.1;
+  border-top:1px solid var(--line-2)}
+
+/* ---------- mobile / tablet ---------- */
+@media (max-width:900px){
+  .wrap{padding:0 20px}
+  .hero{padding:92px 0 56px}
+  .hero h1{font-size:clamp(56px,15vw,92px)}
+  .hero h2{font-size:clamp(23px,6vw,32px)}
+  .hero .sub{max-width:100%;font-size:16px}
+  .sec{padding:72px 0}
+  .final{padding:86px 0}
+  /* 44px minimum touch targets */
+  .btn{min-height:44px;padding:13px 22px}
+  .link-sm{display:inline-flex;align-items:center;min-height:44px}
+  .navlinks a{min-height:44px;display:inline-flex;align-items:center}
+  /* PMOS hierarchy: stack name above description so nothing overflows */
+  .hrow{flex-wrap:wrap;gap:5px 12px;align-items:flex-start;padding:11px 0}
+  .hrow .hn{min-width:0;flex:1 1 100%}
+  .hrow .hd{flex:1 1 100%}
+  .hrow .tag{margin-left:0;margin-right:6px}
+  /* candidate-action rows wrap instead of pushing the verdict chip off-screen */
+  .opt{flex-wrap:wrap}
+  .opt .ov{margin-left:auto}
+  .txn .r3{font-size:12px}
+  .panel-h{gap:12px}
+  .panel-h .ttl{flex:1 1 100%}
+  .stg{min-width:calc(50% - 3px)}
+  .kpi .v{font-size:26px}
+}
+@media (max-width:430px){
+  .kpis{grid-template-columns:1fr}
+  .grid6{grid-template-columns:1fr}
+  .stg{min-width:100%}
+  .strip .node{font-size:11px;padding:7px 11px}
+}
+/* iPhone safe areas */
+@supports (padding:max(0px)){
+  nav .wrap,.wrap{
+    padding-left:max(20px,env(safe-area-inset-left));
+    padding-right:max(20px,env(safe-area-inset-right));
+  }
+  footer{padding-bottom:max(46px,env(safe-area-inset-bottom))}
+}
+@media (min-width:901px){
+  @supports (padding:max(0px)){
+    .wrap,nav .wrap{
+      padding-left:max(30px,env(safe-area-inset-left));
+      padding-right:max(30px,env(safe-area-inset-right));
+    }
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{animation:none!important;transition:none!important}
+}
 </style>
 </head>
 <body>
 
+<div id="bg" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
 <nav><div class="wrap">
-  <div class="brand">AXIOM</div>
+  <div class="brand"><i></i>AXIOM</div>
   <div class="navlinks">
     <a href="#why">Why AXIOM</a>
     <a href="#stack">Technical approach</a>
@@ -232,15 +362,17 @@ footer{padding:26px 0 38px;text-align:center;font-family:var(--mono);font-size:1
   </div>
 </div></nav>
 
+<main>
+
 <!-- HERO -->
 <section><div class="wrap hero">
-  <span class="badge">Financial Reasoning SLM</span>
-  <h1>AXIOM</h1>
-  <h2>Verified Revenue Autopilot</h2>
-  <p class="sub">An open-source small language model evolving from Qwen2.5-1.5B fine-tuning into a
-  financial reasoning system for verified autonomous revenue recovery.</p>
+  <div><span class="badge" data-rv>Financial Reasoning SLM</span></div>
+  <h1 data-rv>AXIOM</h1>
+  <h2 data-rv>Verified Revenue Autopilot</h2>
+  <p class="sub" data-rv>An open-source small language model evolving from <b>Qwen2.5-1.5B</b>
+  fine-tuning into a financial reasoning system for verified autonomous revenue recovery.</p>
 
-  <div class="strip">
+  <div class="strip" id="strip">
     <span class="node hl">Qwen2.5-1.5B</span><span class="arw">→</span>
     <span class="node">SFT / QLoRA</span><span class="arw">→</span>
     <span class="node">GRPO</span><span class="arw">→</span>
@@ -250,29 +382,30 @@ footer{padding:26px 0 38px;text-align:center;font-family:var(--mono);font-size:1
     <span class="node hl">Revenue Recovery</span>
   </div>
 
-  <div class="cta-row">
-    <a href="#demo" class="btn">Run the simulation ↓</a>
+  <div class="cta" data-rv>
+    <a href="#demo" class="btn">Run the simulation <span>↓</span></a>
     <a href="#stack" class="link-sm">View technical approach</a>
   </div>
 </div></section>
 
 <!-- WHY -->
-<section id="why"><div class="wrap sec">
-  <span class="eyebrow">Why AXIOM</span>
-  <h2 style="margin-top:12px">From an SLM to a Financial Decision Engine</h2>
+<section id="why" class="panel-bg"><div class="wrap sec">
+  <span class="eyebrow" data-rv>Why AXIOM</span>
+  <h2 class="sec-h2" data-rv>From an SLM to a Financial Decision Engine</h2>
   <div class="two">
-    <div>
-      <p style="font-size:19px;font-weight:700;letter-spacing:-.02em">AXIOM is not an LLM wrapper.</p>
-      <p style="font-size:15.5px;color:var(--ink-2);margin-top:14px;line-height:1.65">
-      It is an open-source reasoning model trained from a <b>Qwen2.5-1.5B</b> foundation using
-      supervised fine-tuning (<b>SFT / QLoRA</b>) and reinforcement learning (<b>GRPO</b>), with
-      process-level verification and adaptive reasoning built into the stack.</p>
+    <div data-rv>
+      <p class="big-claim">AXIOM is <em>not</em> an LLM wrapper.</p>
+      <p style="font-size:15.5px;color:var(--muted);margin-top:18px;line-height:1.66">
+      It is an open-source reasoning model trained from a <b style="color:var(--text)">Qwen2.5-1.5B</b>
+      foundation using supervised fine-tuning (<b style="color:var(--text)">SFT / QLoRA</b>) and
+      reinforcement learning (<b style="color:var(--text)">GRPO</b>), with process-level
+      verification and adaptive reasoning built into the stack.</p>
     </div>
-    <div>
-      <p style="font-size:15.5px;color:var(--ink-2);line-height:1.65">
-      We are now adapting this reasoning stack toward <b>financial decisions</b> — where the model
-      must reason about context, evaluate alternatives, verify its decision, and only then
-      recommend or execute an action.</p>
+    <div data-rv>
+      <p style="font-size:15.5px;color:var(--muted);line-height:1.66">
+      We are now adapting this reasoning stack toward <b style="color:var(--text)">financial
+      decisions</b> — where the model must reason about context, evaluate alternatives, verify its
+      decision, and only then recommend or execute an action.</p>
       <p class="note">The financial specialization is in progress. It is being trained and adapted;
       it is not a completed capability.</p>
     </div>
@@ -281,117 +414,129 @@ footer{padding:26px 0 38px;text-align:center;font-family:var(--mono);font-size:1
 
 <!-- STACK -->
 <section id="stack"><div class="wrap sec">
-  <span class="eyebrow">Technical approach</span>
-  <h2 style="margin-top:12px">The stack, end to end</h2>
-  <p class="lede">Each stage below is implemented in the AXIOM repository unless marked otherwise.
-  We separate what is built from what is being adapted and what is planned.</p>
+  <span class="eyebrow" data-rv>Technical approach</span>
+  <h2 class="sec-h2" data-rv>The stack, end to end</h2>
+  <p class="lede" data-rv>Each stage is implemented in the AXIOM repository unless marked
+  otherwise. We separate what is built from what is being adapted and what is planned.</p>
   <div class="pipe">
-    <div class="pstep built"><div class="n">01</div><div><div class="t">Qwen2.5-1.5B-Instruct<span class="tag b">Built</span></div><div class="d">Open-weight foundation model. Apache 2.0.</div></div></div>
-    <div class="pstep built"><div class="n">02</div><div><div class="t">Open-source fine-tuning<span class="tag b">Built</span></div><div class="d">Reasoning traces distilled and compressed under a token budget with an answer-preservation check.</div></div></div>
-    <div class="pstep built"><div class="n">03</div><div><div class="t">SFT / QLoRA<span class="tag b">Built</span></div><div class="d">4-bit NF4 QLoRA, LoRA r=16 / α=32 on all linear layers, curriculum ordering.</div></div></div>
-    <div class="pstep built"><div class="n">04</div><div><div class="t">GRPO reinforcement learning<span class="tag b">Built</span></div><div class="d">Composite reward: correctness + verifier score − length − repetition. Verifier frozen, KL-leashed to the SFT reference.</div></div></div>
-    <div class="pstep built"><div class="n">05</div><div><div class="t">AXIOM small reasoning model<span class="tag b">Built</span></div><div class="d">A trained SLM that reasons in explicit, segmented steps.</div></div></div>
-    <div class="pstep built"><div class="n">06</div><div><div class="t">Adaptive reasoning depth<span class="tag b">Built</span></div><div class="d">Confidence-driven continue / expand / exit controller under hard depth and token caps.</div></div></div>
-    <div class="pstep built"><div class="n">07</div><div><div class="t">XD-PRM process verification<span class="tag b">Built</span></div><div class="d">Five scalar heads scored per reasoning step: logic, commonsense, consistency, efficiency, confidence.</div></div></div>
-    <div class="pstep prog"><div class="n">08</div><div><div class="t">Financial adaptation<span class="tag p">In progress</span></div><div class="d">Training and adapting the model and its verifier toward payment context, recovery strategy and financial risk.</div></div></div>
-    <div class="pstep plan"><div class="n">09</div><div><div class="t">Verified financial decision<span class="tag r">Planned</span></div><div class="d">Pass / revise / escalate gate on a financial action, with calibrated confidence.</div></div></div>
-    <div class="pstep plan"><div class="n">10</div><div><div class="t">Revenue recovery action<span class="tag r">Planned</span></div><div class="d">Execution against Razorpay. No integration exists today.</div></div></div>
+    <div class="pstep built" data-rv><div class="n">01</div><div><div class="t">Qwen2.5-1.5B-Instruct<span class="tag b">Built</span></div><div class="d">Open-weight foundation model. Apache 2.0.</div></div></div>
+    <div class="pstep built" data-rv><div class="n">02</div><div><div class="t">Open-source fine-tuning<span class="tag b">Built</span></div><div class="d">Reasoning traces distilled and compressed under a token budget with an answer-preservation check.</div></div></div>
+    <div class="pstep built" data-rv><div class="n">03</div><div><div class="t">SFT / QLoRA<span class="tag b">Built</span></div><div class="d">4-bit NF4 QLoRA, LoRA r=16 / α=32 on all linear layers, curriculum ordering.</div></div></div>
+    <div class="pstep built" data-rv><div class="n">04</div><div><div class="t">GRPO reinforcement learning<span class="tag b">Built</span></div><div class="d">Composite reward: correctness + verifier score − length − repetition. Verifier frozen, KL-leashed to the SFT reference.</div></div></div>
+    <div class="pstep built" data-rv><div class="n">05</div><div><div class="t">AXIOM small reasoning model<span class="tag b">Built</span></div><div class="d">A trained SLM that reasons in explicit, segmented steps.</div></div></div>
+    <div class="pstep built" data-rv><div class="n">06</div><div><div class="t">Adaptive reasoning depth<span class="tag b">Built</span></div><div class="d">Confidence-driven continue / expand / exit controller under hard depth and token caps.</div></div></div>
+    <div class="pstep built" data-rv><div class="n">07</div><div><div class="t">XD-PRM process verification<span class="tag b">Built</span></div><div class="d">Five scalar heads scored per reasoning step: logic, commonsense, consistency, efficiency, confidence.</div></div></div>
+    <div class="pstep prog" data-rv><div class="n">08</div><div><div class="t">Financial adaptation<span class="tag p">In progress</span></div><div class="d">Training and adapting the model and its verifier toward payment context, recovery strategy and financial risk.</div></div></div>
+    <div class="pstep plan" data-rv><div class="n">09</div><div><div class="t">Verified financial decision<span class="tag r">Planned</span></div><div class="d">Pass / revise / escalate gate on a financial action, with calibrated confidence.</div></div></div>
+    <div class="pstep plan" data-rv><div class="n">10</div><div><div class="t">Revenue recovery action<span class="tag r">Planned</span></div><div class="d">Execution against Razorpay. No integration exists today.</div></div></div>
   </div>
-  <p class="note">Benchmark accuracy for the trained model has not been measured on adequate
+  <p class="note" data-rv>Benchmark accuracy for the trained model has not been measured on adequate
   hardware yet, and no financial training results exist. See the repository README for the full
   measured-vs-unmeasured breakdown.</p>
 </div></section>
 
 <!-- DEMO -->
-<section id="demo" class="demo"><div class="wrap sec">
-  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+<section id="demo" class="solid-bg"><div class="wrap sec">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap" data-rv>
     <span class="eyebrow">The core demo</span>
-    <span class="sim-tag">● Simulation data — synthetic</span>
+    <span class="sim-tag"><span class="dot"></span>Simulation data — synthetic</span>
   </div>
-  <h2 style="margin-top:12px">Live Simulation — Verified Revenue Recovery</h2>
-  <p class="lede">See how AXIOM reasons about a failed payment before allowing a recovery action.
-  This is a prototype of the planned financial workflow, running on synthetic transactions. It does
-  not connect to Razorpay and executes no real payment actions.</p>
+  <h2 class="sec-h2" data-rv>Live Simulation — Verified Revenue Recovery</h2>
+  <p class="lede" data-rv>See how AXIOM reasons about a failed payment before allowing a recovery
+  action. This is a prototype of the planned financial workflow, running on synthetic transactions.
+  It does not connect to Razorpay and executes no real payment actions.</p>
 
   <div class="kpis">
-    <div class="kpi"><div class="l">Revenue at risk</div><div class="v">₹18,740</div></div>
-    <div class="kpi"><div class="l">Failed payments</div><div class="v">12</div></div>
-    <div class="kpi"><div class="l">Recovery candidates</div><div class="v">8</div></div>
-    <div class="kpi"><div class="l">Verification required</div><div class="v blue">4</div></div>
+    <div class="kpi" data-rv><div class="l">Revenue at risk</div><div class="v" data-count="18740" data-prefix="₹">₹18,740</div></div>
+    <div class="kpi" data-rv><div class="l">Failed payments</div><div class="v" data-count="12">12</div></div>
+    <div class="kpi" data-rv><div class="l">Recovery candidates</div><div class="v" data-count="8">8</div></div>
+    <div class="kpi" data-rv><div class="l">Verification required</div><div class="v blue" data-count="4">4</div></div>
   </div>
 
-  <div class="console">
+  <div class="console" data-rv>
     <div class="panel">
       <div class="panel-h"><span class="ttl">Failed payments · 4 of 12</span></div>
       <div class="panel-b" id="txnlist"></div>
     </div>
-
     <div class="panel">
       <div class="panel-h">
         <span class="ttl" id="phead">AXIOM reasoning console</span>
-        <span style="display:flex;gap:8px">
-          <button class="btn" id="run" style="padding:8px 16px;font-size:13px">Run Simulation</button>
-          <button class="btn btn-ghost" id="reset" style="padding:8px 16px;font-size:13px">Reset</button>
+        <span style="display:flex;gap:9px">
+          <button class="btn" id="run" style="padding:9px 18px;font-size:13px">Run Simulation</button>
+          <button class="btn btn-ghost" id="reset" style="padding:9px 18px;font-size:13px">Reset</button>
         </span>
       </div>
       <div class="panel-b" id="stage"></div>
     </div>
   </div>
 
-  <div class="flow">MODEL <b>→</b> REASONING <b>→</b> VERIFICATION <b>→</b> ACTION</div>
+  <div class="flow" data-rv>MODEL <b>→</b> REASONING <b>→</b> VERIFICATION <b>→</b> ACTION</div>
 </div></section>
 
 <!-- WHY VERIFY -->
-<section><div class="wrap sec">
-  <span class="eyebrow">Why this matters</span>
-  <h2 style="margin-top:12px">Why Verification Before Action?</h2>
+<section class="panel-bg"><div class="wrap sec">
+  <span class="eyebrow" data-rv>Why this matters</span>
+  <h2 class="sec-h2" data-rv>Why Verification Before Action?</h2>
   <div class="cards">
-    <div class="card"><h3>Reason</h3><p>Financial actions require contextual reasoning — the failure code, the customer's history, the merchant's policy and the timing all change the right answer.</p></div>
-    <div class="card"><h3>Verify</h3><p>The model's reasoning is checked before consequential actions. A verifier that scores each step independently can refuse one the reasoner was willing to take.</p></div>
-    <div class="card"><h3>Escalate</h3><p>Uncertain or high-risk cases can be routed to stronger models or human review, rather than being resolved by a confident guess.</p></div>
+    <div class="card" data-rv><h3>Reason</h3><p>Financial actions require contextual reasoning — the failure code, the customer's history, the merchant's policy and the timing all change the right answer.</p></div>
+    <div class="card" data-rv><h3>Verify</h3><p>The model's reasoning is checked before consequential actions. A verifier that scores each step independently can refuse one the reasoner was willing to take.</p></div>
+    <div class="card" data-rv><h3>Escalate</h3><p>Uncertain or high-risk cases can be routed to stronger models or human review, rather than being resolved by a confident guess.</p></div>
   </div>
-  <p class="note">AXIOM's process verifier (XD-PRM) and adaptive-depth controller are implemented in
-  the repository. Their adaptation to financial dimensions, and the escalation policy above, are in
-  progress and not yet production implemented.</p>
+  <p class="note" data-rv>AXIOM's process verifier (XD-PRM) and adaptive-depth controller are
+  implemented in the repository. Their adaptation to financial dimensions, and the escalation policy
+  above, are in progress and not yet production implemented.</p>
 </div></section>
 
 <!-- PMOS -->
 <section id="pmos"><div class="wrap sec">
-  <span class="eyebrow">The longer-term vision</span>
-  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:12px">
-    <h2>PMOS — Private Merchant Operating System</h2>
-    <span class="badge badge-gray">Roadmap / product vision</span>
+  <span class="eyebrow" data-rv>The longer-term vision</span>
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:14px" data-rv>
+    <h2 class="sec-h2" style="margin:0">PMOS — Private Merchant Operating System</h2>
+    <span class="badge" style="background:rgba(255,255,255,.03);color:var(--faint);border-color:var(--line)">Roadmap / product vision</span>
   </div>
-  <p class="lede">The same Financial AXIOM model can eventually become the intelligence layer behind
-  a local-first merchant operating system for micro-businesses. None of the directions below are
-  implemented.</p>
+  <p class="lede" data-rv>The same Financial AXIOM model can eventually become the intelligence
+  layer behind a local-first merchant operating system for micro-businesses. None of the directions
+  below are implemented.</p>
+
+  <div class="hier">
+    <div class="hrow" data-rv><span class="hn">AXIOM model</span><span class="hd">Trained open-source reasoning SLM<span class="tag b">Built</span></span></div>
+    <div class="hbar"></div>
+    <div class="hrow" data-rv><span class="hn">Financial AXIOM</span><span class="hd">Domain-specialized financial reasoning<span class="tag p">Adapting</span></span></div>
+    <div class="hbar"></div>
+    <div class="hrow" data-rv><span class="hn">Verification</span><span class="hd">XD-PRM + financial dimensions<span class="tag p">Adapting</span></span></div>
+    <div class="hbar"></div>
+    <div class="hrow" data-rv><span class="hn">Agentic workflows</span><span class="hd">Verified autonomous financial actions<span class="tag r">Planned</span></span></div>
+    <div class="hbar"></div>
+    <div class="hrow" data-rv><span class="hn">PMOS</span><span class="hd">Merchant experience<span class="tag r">Vision</span></span></div>
+  </div>
+
   <div class="grid6">
-    <div class="g6">Revenue Recovery<span>Entry point</span></div>
-    <div class="g6">Cash Flow<span>Roadmap</span></div>
-    <div class="g6">Reconciliation<span>Roadmap</span></div>
-    <div class="g6">Receivables<span>Roadmap</span></div>
-    <div class="g6">Inventory<span>Roadmap</span></div>
-    <div class="g6">Customer Intelligence<span>Roadmap</span></div>
+    <div class="g6" data-rv>Revenue Recovery<span>Entry point</span></div>
+    <div class="g6" data-rv>Cash Flow<span>Roadmap</span></div>
+    <div class="g6" data-rv>Reconciliation<span>Roadmap</span></div>
+    <div class="g6" data-rv>Receivables<span>Roadmap</span></div>
+    <div class="g6" data-rv>Inventory<span>Roadmap</span></div>
+    <div class="g6" data-rv>Customer Intelligence<span>Roadmap</span></div>
   </div>
 </div></section>
 
 <!-- LOCAL FIRST -->
-<section><div class="wrap sec">
-  <span class="eyebrow">Architecture</span>
-  <h2 style="margin-top:12px">Local-First by Design</h2>
-  <p class="lede">AXIOM is being designed toward local-first financial intelligence — keeping
-  merchant business context under merchant control wherever practical, and escalating only when
-  additional model capability is required. A 1.5B-parameter foundation is what makes local
+<section class="panel-bg"><div class="wrap sec">
+  <span class="eyebrow" data-rv>Architecture</span>
+  <h2 class="sec-h2" data-rv>Local-First by Design</h2>
+  <p class="lede" data-rv>AXIOM is being designed toward local-first financial intelligence —
+  keeping merchant business context under merchant control wherever practical, and escalating only
+  when additional model capability is required. A 1.5B-parameter foundation is what makes local
   execution realistic at all.</p>
-  <p class="note">This is a design goal, not a guarantee. We make no claim of absolute privacy, zero
-  cloud use, guaranteed data locality, or compliance certification.</p>
+  <p class="note" data-rv>This is a design goal, not a guarantee. We make no claim of absolute
+  privacy, zero cloud use, guaranteed data locality, or compliance certification.</p>
 </div></section>
 
 <!-- FINAL -->
 <section><div class="wrap final">
-  <p class="big">AI agents can act.<br>AXIOM is being built to make sure they know<br><em>when they should act.</em></p>
-  <div class="mark">AXIOM</div>
-  <p class="msub">Financial Reasoning SLM · Verified Revenue Autopilot</p>
+  <p class="big" data-rv>AI agents can act.<br>AXIOM is being built to make sure they know<br><em>when they should act.</em></p>
+  <div class="mark" data-rv>AXIOM</div>
+  <p class="msub" data-rv>Financial Reasoning SLM · Verified Revenue Autopilot</p>
 </div></section>
 
 <footer>
@@ -399,10 +544,247 @@ footer{padding:26px 0 38px;text-align:center;font-family:var(--mono);font-size:1
   Simulation uses synthetic data · No Razorpay integration · No real payment actions
 </footer>
 
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollTrigger.min.js"></script>
 <script>
+/* ============================================================
+   AXIOM landing — orbital core (Three.js) + scroll (GSAP)
+   ============================================================ */
+const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- 1. WebGL orbital core ---------- */
+(function core(){
+  if (REDUCED || typeof THREE === "undefined") return;
+  const host = document.getElementById("bg");
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ alpha:true, antialias:true, powerPreference:"high-performance" });
+  } catch(e){ return; }                      // no WebGL -> page still fine
+  // Phones get a lighter scene: capped DPR and fewer particles keep the
+  // canvas from costing battery/frame-rate on mid-range hardware.
+  const MOBILE = innerWidth < 900;
+  renderer.setPixelRatio(Math.min(devicePixelRatio, MOBILE ? 1.5 : 2));
+  renderer.setSize(innerWidth, innerHeight);
+  host.appendChild(renderer.domElement);
+
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(46, innerWidth/innerHeight, 0.1, 200);
+  camera.position.set(0, 0, 13);
+
+  const BLUE = 0x3395ff, BRIGHT = 0x9fcbff;
+  const root = new THREE.Group();  scene.add(root);
+
+  // Park the core clear of the hero copy: right of the text on wide screens,
+  // lifted above it on narrow ones where there is no horizontal room.
+  function placeRoot(){
+    const wide = innerWidth > 900;
+    root.position.x = wide ? 4.2 : 0;
+    root.position.y = wide ? 0.2 : 3.4;
+    const s = wide ? 1 : 0.62;
+    root.scale.setScalar(s);
+  }
+  placeRoot();
+
+  // -- the model core -------------------------------------------------
+  const coreGrp = new THREE.Group(); root.add(coreGrp);
+
+  const shell = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(2.05, 1),
+    new THREE.MeshBasicMaterial({ color:BLUE, wireframe:true, transparent:true, opacity:.55 })
+  );
+  coreGrp.add(shell);
+
+  const inner = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(1.42, 2),
+    new THREE.MeshBasicMaterial({ color:0x0d2f5e, transparent:true, opacity:.92 })
+  );
+  coreGrp.add(inner);
+
+  const halo = new THREE.Mesh(
+    new THREE.SphereGeometry(2.5, 32, 32),
+    new THREE.MeshBasicMaterial({ color:BLUE, transparent:true, opacity:.06,
+                                  side:THREE.BackSide })
+  );
+  coreGrp.add(halo);
+
+  // core particles
+  const cpN = MOBILE ? 180 : 420, cpPos = new Float32Array(cpN*3);
+  for (let i=0;i<cpN;i++){
+    const r = 2.2 + Math.random()*0.7, t = Math.random()*Math.PI*2, p = Math.acos(2*Math.random()-1);
+    cpPos[i*3]   = r*Math.sin(p)*Math.cos(t);
+    cpPos[i*3+1] = r*Math.sin(p)*Math.sin(t);
+    cpPos[i*3+2] = r*Math.cos(p);
+  }
+  const cpGeo = new THREE.BufferGeometry();
+  cpGeo.setAttribute("position", new THREE.BufferAttribute(cpPos,3));
+  const coreDust = new THREE.Points(cpGeo,
+    new THREE.PointsMaterial({ color:BRIGHT, size:.045, transparent:true, opacity:.7 }));
+  coreGrp.add(coreDust);
+
+  // -- orbiting rings = training stages -------------------------------
+  const RINGS = [
+    { r:3.5, tilt:[1.30, 0.00], spd: 0.42, op:.62 },   // SFT / QLoRA
+    { r:4.7, tilt:[1.16, 0.92], spd:-0.30, op:.46 },   // GRPO
+    { r:6.0, tilt:[1.42,-0.68], spd: 0.20, op:.34 }    // XD-PRM
+  ];
+  const rings = RINGS.map(cfg => {
+    const g = new THREE.Group();
+    g.rotation.set(cfg.tilt[0], cfg.tilt[1], 0);
+    const torus = new THREE.Mesh(
+      new THREE.TorusGeometry(cfg.r, 0.012, 8, 180),
+      new THREE.MeshBasicMaterial({ color:BLUE, transparent:true, opacity:cfg.op })
+    );
+    g.add(torus);
+    // travelling node on the ring
+    const node = new THREE.Mesh(
+      new THREE.SphereGeometry(0.1, 16, 16),
+      new THREE.MeshBasicMaterial({ color:BRIGHT })
+    );
+    const glow = new THREE.Mesh(
+      new THREE.SphereGeometry(0.26, 16, 16),
+      new THREE.MeshBasicMaterial({ color:BLUE, transparent:true, opacity:.22 })
+    );
+    node.add(glow);
+    g.add(node);
+    root.add(g);
+    return { grp:g, torus, node, ...cfg, baseR:cfg.r, phase:Math.random()*Math.PI*2 };
+  });
+
+  // -- starfield ------------------------------------------------------
+  const stN = MOBILE ? 340 : 900, stPos = new Float32Array(stN*3);
+  for (let i=0;i<stN;i++){
+    stPos[i*3]   = (Math.random()-.5)*90;
+    stPos[i*3+1] = (Math.random()-.5)*60;
+    stPos[i*3+2] = (Math.random()-.5)*60 - 18;
+  }
+  const stGeo = new THREE.BufferGeometry();
+  stGeo.setAttribute("position", new THREE.BufferAttribute(stPos,3));
+  scene.add(new THREE.Points(stGeo,
+    new THREE.PointsMaterial({ color:0x6f8fbf, size:.09, transparent:true, opacity:.5 })));
+
+  // -- interaction / scroll state -------------------------------------
+  const S = { spread:0, drift:0, dim:1, mx:0, my:0, tmx:0, tmy:0 };
+
+  addEventListener("pointermove", e => {
+    S.tmx = (e.clientX/innerWidth  - .5) * 2;
+    S.tmy = (e.clientY/innerHeight - .5) * 2;
+  }, { passive:true });
+
+  addEventListener("resize", () => {
+    camera.aspect = innerWidth/innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+    placeRoot();
+  });
+
+  const clock = new THREE.Clock();
+  (function loop(){
+    requestAnimationFrame(loop);
+    const t = clock.getElapsedTime();
+
+    // hover + revolve
+    coreGrp.position.y = Math.sin(t*0.75)*0.32;
+    coreGrp.rotation.y = t*0.16;
+    coreGrp.rotation.x = Math.sin(t*0.35)*0.12;
+    shell.rotation.y   = -t*0.1;
+    coreDust.rotation.y = t*0.06;
+
+    rings.forEach((rg,i) => {
+      const a = t*rg.spd + rg.phase;
+      const R = rg.baseR * (1 + S.spread*0.55);
+      rg.torus.scale.setScalar(R/rg.baseR);
+      rg.node.position.set(Math.cos(a)*R, Math.sin(a)*R, 0);
+      rg.grp.position.y = coreGrp.position.y * (1 - i*0.15);
+      rg.grp.rotation.z = a*0.12;
+      rg.torus.material.opacity = rg.op * S.dim;
+      rg.node.material.opacity  = S.dim;
+    });
+
+    shell.material.opacity = .55*S.dim;
+    halo.material.opacity  = .06*S.dim;
+    coreDust.material.opacity = .7*S.dim;
+    inner.material.opacity = .92*S.dim;
+
+    // eased mouse parallax
+    S.mx += (S.tmx - S.mx)*0.045;
+    S.my += (S.tmy - S.my)*0.045;
+    camera.position.x = S.mx*1.5 + S.drift;
+    camera.position.y = -S.my*1.0;
+    camera.lookAt(S.drift*0.35, 0, 0);
+
+    renderer.render(scene, camera);
+  })();
+
+  window.__axCore = S;   // handed to the scroll layer below
+})();
+
+/* ---------- 2. Scroll choreography ---------- */
+(function scrollFX(){
+  if (REDUCED || typeof gsap === "undefined" || typeof ScrollTrigger === "undefined") return;
+  gsap.registerPlugin(ScrollTrigger);
+  const S = window.__axCore;
+
+  // hero pipeline strip draws itself
+  gsap.from("#strip .node, #strip .arw", {
+    opacity:0, y:14, duration:.5, stagger:.055, ease:"power2.out", delay:.35
+  });
+
+  // hero copy
+  gsap.from(".hero [data-rv]", {
+    opacity:0, y:26, duration:.75, stagger:.09, ease:"power3.out"
+  });
+
+  // every other section reveals on scroll (JS adds the hidden state,
+  // so with JS off or broken the page is simply visible)
+  gsap.utils.toArray("section:not(:first-child) [data-rv]").forEach(el => {
+    gsap.from(el, {
+      scrollTrigger:{ trigger:el, start:"top 88%", once:true },
+      opacity:0, y:28, duration:.66, ease:"power3.out"
+    });
+  });
+
+  // KPI counters
+  gsap.utils.toArray("[data-count]").forEach(el => {
+    const end = +el.dataset.count, pre = el.dataset.prefix || "";
+    const o = { v:0 };
+    gsap.to(o, {
+      scrollTrigger:{ trigger:el, start:"top 90%", once:true },
+      v:end, duration:1.5, ease:"power2.out",
+      onUpdate(){ el.textContent = pre + Math.round(o.v).toLocaleString("en-IN"); }
+    });
+  });
+
+  if (!S) return;
+
+  // rings separate through the technical-stack section, then re-merge
+  gsap.to(S, {
+    scrollTrigger:{ trigger:"#stack", start:"top bottom", end:"bottom top", scrub:1 },
+    spread:1, ease:"none"
+  });
+  // core drifts toward centre and fades back so section copy stays readable
+  gsap.to(S, {
+    scrollTrigger:{ trigger:"#why", start:"top bottom", end:"top top", scrub:1 },
+    drift:2.4, dim:.42, ease:"none"
+  });
+  // dim the field behind the console so the simulation stays readable
+  gsap.to(S, {
+    scrollTrigger:{ trigger:"#demo", start:"top 75%", end:"top 25%", scrub:1 },
+    dim:.16, ease:"none"
+  });
+  // bring it back for the closing statement
+  gsap.to(S, {
+    scrollTrigger:{ trigger:".final", start:"top bottom", end:"top 60%", scrub:1 },
+    dim:1, drift:0, spread:.25, ease:"none"
+  });
+})();
+
+/* ---------- 3. Recovery simulation (unchanged logic) ---------- */
 const TXNS = [
   {
-    id:"AX-1042", amt:"₹12,499", amtN:12499,
+    id:"AX-1042", amt:"₹12,499",
     fail:"Insufficient funds", cust:"High-value customer",
     ctx:[["Failure","Insufficient funds"],["Customer","High historical transaction value"],
          ["History","Multiple successful prior payments"],["Merchant policy","Avoid repeated immediate retries"]],
@@ -420,7 +802,7 @@ const TXNS = [
     queued:"Payment recovery action queued — simulated"
   },
   {
-    id:"AX-1043", amt:"₹3,240", amtN:3240,
+    id:"AX-1043", amt:"₹3,240",
     fail:"Bank decline", cust:"Returning customer",
     ctx:[["Failure","Bank decline — issuer side"],["Customer","Returning customer"],
          ["History","Prior payments settled normally"],["Merchant policy","Respect issuer cool-off window"]],
@@ -438,7 +820,7 @@ const TXNS = [
     queued:"Payment recovery action queued — simulated"
   },
   {
-    id:"AX-1044", amt:"₹1,980", amtN:1980,
+    id:"AX-1044", amt:"₹1,980",
     fail:"Authentication failure", cust:"New customer",
     ctx:[["Failure","Authentication failure"],["Customer","New customer — no payment history"],
          ["History","No prior successful payment"],["Merchant policy","Limit contact for first-time customers"]],
@@ -457,7 +839,7 @@ const TXNS = [
     queued:"Payment recovery action queued — simulated"
   },
   {
-    id:"AX-1051", amt:"₹1,021", amtN:1021,
+    id:"AX-1051", amt:"₹1,021",
     fail:"Insufficient funds", cust:"Dormant customer · 3rd failure",
     ctx:[["Failure","Insufficient funds — 3rd consecutive"],["Customer","Dormant — no activity in 7 months"],
          ["History","Two prior recovery attempts failed"],["Merchant policy","Escalate on repeated failure"]],
@@ -478,82 +860,95 @@ const TXNS = [
 
 const STAGES = ["Understand","Generate options","Reason","Verify","Decide","Act"];
 let sel = 0, running = false, timers = [];
-
-const $ = id => document.getElementById(id);
-const clear = () => { timers.forEach(clearTimeout); timers = []; };
+const $  = id => document.getElementById(id);
+const clearT = () => { timers.forEach(clearTimeout); timers = []; };
 const wait = (fn, ms) => timers.push(setTimeout(fn, ms));
+const pop = el => { if (!REDUCED && typeof gsap !== "undefined" && el)
+  gsap.from(el, { opacity:0, y:12, duration:.4, ease:"power2.out" }); };
 
 function renderList(){
   $("txnlist").innerHTML = TXNS.map((t,i) => `
-    <div class="txn ${i===sel?'on':''}" data-i="${i}">
+    <div class="txn ${i===sel?'on':''}" data-i="${i}" tabindex="0" role="button">
       <div class="r1"><span class="amt">${t.amt}</span><span class="id">${t.id}</span></div>
       <div class="r2">${t.fail}</div>
       <div class="r3">${t.cust}</div>
       <span class="pill ${t.done ? (t.verdict==='esc'?'esc':'pass') : 'pend'}">${
         t.done ? (t.verdict==='esc'?'Escalated':'Verified') : 'Pending'}</span>
     </div>`).join("");
-  document.querySelectorAll(".txn").forEach(el =>
-    el.onclick = () => { if(running) return; sel = +el.dataset.i; renderList(); renderIdle(); });
+  document.querySelectorAll(".txn").forEach(el => {
+    const pick = () => { if (running) return; sel = +el.dataset.i; renderList(); renderIdle(); };
+    el.onclick = pick;
+    el.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } };
+  });
 }
 
-function stagesHTML(active){
-  return `<div class="stages">` + STAGES.map((s,i) => `
-    <div class="stg ${active===i?'act':(active>i?'done':'')}">
-      <div class="sn">${String(i+1).padStart(2,'0')}</div><div class="st">${s.toUpperCase()}</div>
-    </div>`).join("") + `</div>`;
-}
+const stagesHTML = active => `<div class="stages">` + STAGES.map((s,i) => `
+  <div class="stg ${active===i?'act':(active>i?'done':'')}">
+    <div class="sn">${String(i+1).padStart(2,'0')}</div><div class="st">${s.toUpperCase()}</div>
+  </div>`).join("") + `</div>`;
 
-function ctxHTML(t){
-  return `<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:12px">
-      <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--faint)">PAYMENT #${t.id}</span>
-      <span style="font-size:23px;font-weight:770;letter-spacing:-.025em">${t.amt}</span>
-    </div>
-    <div class="ctx">${t.ctx.map(c=>`<div class="c"><div class="k">${c[0]}</div><div class="v">${c[1]}</div></div>`).join("")}</div>`;
-}
+const ctxHTML = t => `
+  <div style="display:flex;align-items:baseline;gap:13px;margin-bottom:13px;flex-wrap:wrap">
+    <span style="font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--faint)">PAYMENT #${t.id}</span>
+    <span style="font-family:var(--disp);font-size:25px;font-weight:700;letter-spacing:-.03em">${t.amt}</span>
+  </div>
+  <div class="ctx">${t.ctx.map(c=>`<div class="c"><div class="k">${c[0]}</div><div class="v">${c[1]}</div></div>`).join("")}</div>`;
 
 function renderIdle(){
   const t = TXNS[sel];
   $("phead").textContent = `AXIOM reasoning console · ${t.id}`;
-  $("stage").innerHTML = stagesHTML(-1) + `<div style="margin-top:14px">` + ctxHTML(t) + `</div>
-    <div class="empty">Press <b>Run Simulation</b> to reason through this payment.</div>`;
+  $("stage").innerHTML = stagesHTML(-1) +
+    `<div style="margin-top:15px">${ctxHTML(t)}</div>
+     <div class="empty">Press <b style="color:var(--blue-br)">Run Simulation</b> to reason through this payment.</div>`;
 }
 
 function run(){
-  if(running) return;
-  running = true; clear();
-  const t = TXNS[sel];
+  if (running) return;
+  running = true; clearT();
+  const t = TXNS[sel], S = $("stage");
   $("run").disabled = true;
-  const S = $("stage");
-  const base = () => ctxHTML(t);
-  let html = "";
 
-  const paint = (active, extra) => { S.innerHTML = stagesHTML(active) +
-    `<div style="margin-top:14px">` + base() + (extra||"") + `</div>`; };
+  const paint = (active, extra) => {
+    S.innerHTML = stagesHTML(active) + `<div style="margin-top:15px">${ctxHTML(t)}${extra||""}</div>`;
+  };
 
   paint(0);
-  wait(()=>paint(1, `<div class="fade"><div class="ttl" style="font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;font-weight:700;color:var(--ink-2);margin:4px 0 10px">Candidate recovery actions</div>`
-    + t.opts.map(o=>`<div class="opt"><span class="ol">${o.l}</span><div><div class="ot">${o.t}</div><div class="od">${o.d}</div></div></div>`).join("") + `</div>`), 700);
 
-  wait(()=>paint(2, `<div class="fade"><div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;font-weight:700;color:var(--ink-2);margin:4px 0 10px">Reasoning over alternatives</div>`
-    + t.opts.map(o=>`<div class="opt ${o.v==='sel'?'sel':'rej'}"><span class="ol">${o.l}</span><div><div class="ot">${o.t}</div><div class="od">${o.d}</div></div><span class="ov ${o.v}">${o.vt}</span></div>`).join("") + `</div>`), 1900);
-
-  // verification — reveal one row at a time
   wait(()=>{
-    const rows = t.checks.map(c=>`<div class="vrow"><span class="vk">${c[0]}</span><span class="vst wait" data-k="${c[0]}">…</span></div>`).join("");
-    paint(3, `<div class="fade"><div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;font-weight:700;color:var(--blue-deep);margin:4px 0 8px">AXIOM verification · XD-PRM</div><div id="vbox">${rows}</div></div>`);
+    paint(1, `<div id="ex"><div class="subttl">Candidate recovery actions</div>` +
+      t.opts.map(o=>`<div class="opt"><span class="ol">${o.l}</span><div><div class="ot">${o.t}</div><div class="od">${o.d}</div></div></div>`).join("") + `</div>`);
+    pop($("ex"));
+  }, 700);
+
+  wait(()=>{
+    paint(2, `<div id="ex"><div class="subttl">Reasoning over alternatives</div>` +
+      t.opts.map(o=>`<div class="opt ${o.v==='sel'?'sel':'rej'}"><span class="ol">${o.l}</span><div><div class="ot">${o.t}</div><div class="od">${o.d}</div></div><span class="ov ${o.v}">${o.vt}</span></div>`).join("") + `</div>`);
+    pop($("ex"));
+  }, 1900);
+
+  wait(()=>{
+    paint(3, `<div id="ex"><div class="subttl acc">AXIOM verification · XD-PRM</div><div id="vbox">` +
+      t.checks.map(c=>`<div class="vrow"><span class="vk">${c[0]}</span><span class="vst wait" data-k="${c[0]}">…</span></div>`).join("") +
+      `</div></div>`);
+    pop($("ex"));
     t.checks.forEach((c,i)=> wait(()=>{
       const el = document.querySelector(`[data-k="${CSS.escape(c[0])}"]`);
-      if(el){ el.className = "vst " + c[1]; el.textContent = c[2]; }
+      if (el){ el.className = "vst " + c[1]; el.textContent = c[2];
+               if (!REDUCED && typeof gsap !== "undefined")
+                 gsap.fromTo(el,{scale:.82},{scale:1,duration:.3,ease:"back.out(2.4)"}); }
     }, 260*(i+1)));
   }, 3100);
 
   const vdelay = 3100 + 260*t.checks.length + 500;
 
-  if(t.revise){
+  if (t.revise){
     wait(()=>{
       const box = $("vbox");
-      if(box) box.insertAdjacentHTML("afterend",
-        `<div class="fade" style="margin-top:12px;padding:11px 14px;background:var(--amber-soft);border:1px solid #F2DFBF;border-radius:6px;font-size:13px;color:var(--ink-2)"><b style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--amber)">REVISE →</b> ${t.revise}</div>`);
+      if (box) {
+        box.insertAdjacentHTML("afterend",
+          `<div id="rv" style="margin-top:13px;padding:12px 15px;background:rgba(240,178,74,.08);border:1px solid rgba(240,178,74,.3);border-radius:7px;font-size:13px;color:var(--muted)"><b style="font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--amber)">REVISE →</b> ${t.revise}</div>`);
+        pop($("rv"));
+      }
     }, vdelay);
   }
 
@@ -563,20 +958,24 @@ function run(){
     const box = $("stage");
     box.querySelector(".stages").outerHTML = stagesHTML(4);
     box.insertAdjacentHTML("beforeend",
-      `<div class="verdict ${t.verdict} fade">
+      `<div class="verdict ${t.verdict}" id="vd">
         <div class="vt">${t.verdict==='esc'?'Escalation required':'Verified action'}</div>
         <div class="vm">${t.action}</div>
         <div class="vr">${t.reason}</div>
-        <div class="approved ${t.verdict==='esc'?'amber':''}"><span class="dot"></span>${
+        <div class="approved ${t.verdict==='esc'?'amber':''}" id="ap"><span class="dot"></span>${
           t.verdict==='esc'?'ROUTED TO HUMAN REVIEW':'ACTION APPROVED'}</div>
       </div>`);
+    pop($("vd"));
+    if (!REDUCED && typeof gsap !== "undefined")
+      gsap.fromTo($("ap"), {scale:.88,opacity:0},
+        {scale:1,opacity:1,duration:.5,ease:"back.out(2)",delay:.2});
   }, dd);
 
   wait(()=>{
     const box = $("stage");
     box.querySelector(".stages").outerHTML = stagesHTML(5);
-    box.insertAdjacentHTML("beforeend",
-      `<div class="queued fade">ACTION → SIMULATED · ${t.queued}</div>`);
+    box.insertAdjacentHTML("beforeend", `<div class="queued" id="qd">ACTION → SIMULATED · ${t.queued}</div>`);
+    pop($("qd"));
     TXNS[sel].done = true;
     renderList();
     running = false;
@@ -586,7 +985,7 @@ function run(){
 
 $("run").onclick = run;
 $("reset").onclick = () => {
-  clear(); running = false; $("run").disabled = false;
+  clearT(); running = false; $("run").disabled = false;
   TXNS.forEach(t => t.done = false);
   renderList(); renderIdle();
 };
